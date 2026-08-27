@@ -23,6 +23,12 @@ public static class UpdateE2EOptions
                 continue;
             }
 
+            if (a.Equals("--auto-update-dry-run", StringComparison.OrdinalIgnoreCase))
+            {
+                UpdateService.DryRunInstall = true;
+                continue;
+            }
+
             if (a.StartsWith("--mock-update-url=", StringComparison.OrdinalIgnoreCase))
             {
                 MockUpdateUrl = a["--mock-update-url=".Length..].Trim().Trim('"');

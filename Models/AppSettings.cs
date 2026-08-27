@@ -40,4 +40,16 @@ public sealed class AppSettings
 
     /// <summary>One-time portal reconnect prompt when refresh token is missing.</summary>
     public bool PortalSignInPrompted { get; set; }
+
+    /// <summary>Background sync may discover updates (Portal / GitHub). Default on.</summary>
+    public bool AutoCheckUpdates { get; set; } = true;
+
+    /// <summary>
+    /// When an update is found, download + install without waiting for Account → Check for updates.
+    /// Tray balloon still notifies; settings/license are preserved by Bootstrap.
+    /// </summary>
+    public bool AutoInstallUpdates { get; set; } = true;
+
+    /// <summary>Last version auto-handled (notify and/or install) — avoids repeat every sync.</summary>
+    public string? LastAutoUpdateVersion { get; set; }
 }

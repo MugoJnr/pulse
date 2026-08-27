@@ -123,6 +123,12 @@ public static class AccountBootstrap
 
         try
         {
+            UpdateService.WireBackgroundHost();
+        }
+        catch { }
+
+        try
+        {
             _ = AppHost.Get<IActivationService>().TrySilentReconnectAsync();
         }
         catch { }

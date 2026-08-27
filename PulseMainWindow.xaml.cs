@@ -320,6 +320,18 @@ public partial class PulseMainWindow : Window
         actions.Children.Add(MakeAccountButton("Downloads", p, () => AccountBootstrap.OpenPortal("downloads")));
         actions.Children.Add(MakeAccountButton("Support", p, () => AccountBootstrap.OpenPortal("support")));
         actions.Children.Add(MakeAccountButton("Check for updates", p, UpdateService.CheckForUpdates));
+        var autoInstall = SettingsService.Load().AutoInstallUpdates;
+        actions.Children.Add(MakeAccountButton(
+            autoInstall ? "Auto-install updates: On" : "Auto-install updates: Off",
+            p,
+            () =>
+            {
+                var s = SettingsService.Load();
+                s.AutoInstallUpdates = !s.AutoInstallUpdates;
+                s.AutoCheckUpdates = true;
+                SettingsService.Save(s);
+                NavigateCategory("account");
+            }));
         actions.Children.Add(MakeAccountButton(
             SettingsService.Load().SyncSettingsToPortal ? "Settings sync: On" : "Settings sync: Off (optional)",
             p,

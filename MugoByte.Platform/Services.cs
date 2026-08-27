@@ -763,6 +763,9 @@ public sealed class PlatformSyncHost : IPlatformSync, IDisposable
     public UpdateCheckResult? LastUpdate { get; private set; }
     public IReadOnlyList<string> Announcements { get; private set; } = [];
 
+    /// <summary>Fired on any thread when sync discovers an available update (Portal or GitHub fallback).</summary>
+    public event Action<UpdateCheckResult>? UpdateDiscovered;
+
     public void Start()
     {
         if (_loop is not null) return;
@@ -828,6 +831,13 @@ public sealed class PlatformSyncHost : IPlatformSync, IDisposable
             }
 
             LastUpdate = update;
+            if (update is { UpdateAvailable: true }
+                && !string.IsNullOrWhiteSpace(update.LatestVersion)
+                && !string.IsNullOrWhiteSpace(update.DownloadUrl))
+            {
+                try { UpdateDiscovered?.Invoke(update); }
+                catch (Exception ex) { _log.Warn("update", "UpdateDiscovered handler: " + ex.Message); }
+            }
         }
         catch (Exception ex)
         {

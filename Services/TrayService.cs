@@ -8,8 +8,11 @@ namespace CpuTempWidget.Services;
 /// </summary>
 public sealed class TrayService : IDisposable
 {
+    private static TrayService? _instance;
     private System.Windows.Forms.NotifyIcon? _icon;
     private bool _disposed;
+
+    public TrayService() => _instance = this;
 
     public void Start()
     {
@@ -22,6 +25,7 @@ public sealed class TrayService : IDisposable
             menu.Items.Add("Open Pulse", null, (_, _) => SafeUi(() => PulseHost.ShowMain()));
             menu.Items.Add("Show/Hide Widget", null, (_, _) => SafeUi(ToggleWidget));
             menu.Items.Add("Settings", null, (_, _) => SafeUi(OpenSettings));
+            menu.Items.Add("Install update", null, (_, _) => SafeUi(UpdateService.InstallPendingUpdate));
             menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menu.Items.Add("Exit Pulse", null, (_, _) => SafeUi(App.ExitPulse));
 
@@ -33,11 +37,26 @@ public sealed class TrayService : IDisposable
                 ContextMenuStrip = menu
             };
             _icon.DoubleClick += (_, _) => SafeUi(() => PulseHost.ShowMain());
+            _icon.BalloonTipClicked += (_, _) => SafeUi(UpdateService.InstallPendingUpdate);
         }
         catch (Exception ex)
         {
             DiagnosticLog.WriteError("TrayService.Start failed", ex);
         }
+    }
+
+    public static void ShowBalloon(string title, string text, int timeoutMs = 6000)
+    {
+        try
+        {
+            var icon = _instance?._icon;
+            if (icon is null) return;
+            icon.BalloonTipTitle = title;
+            icon.BalloonTipText = string.IsNullOrWhiteSpace(text) ? title : text;
+            icon.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
+            icon.ShowBalloonTip(Math.Clamp(timeoutMs, 1000, 30000));
+        }
+        catch { }
     }
 
     private static void OpenSettings()
@@ -118,5 +137,8 @@ public sealed class TrayService : IDisposable
             _icon = null;
         }
         catch { }
+
+        if (ReferenceEquals(_instance, this))
+            _instance = null;
     }
 }

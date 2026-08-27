@@ -130,6 +130,31 @@ public class UpdateServiceTests
         var good = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
         Assert.True(UpdateService.VerifyChecksum(bytes, good));
     }
+
+    [Fact]
+    public void ShouldAutoInstall_RespectsSettingsAndMandatory()
+    {
+        var update = new UpdateCheckResult
+        {
+            UpdateAvailable = true,
+            LatestVersion = "9.9.9",
+            DownloadUrl = "http://127.0.0.1/Pulse-Setup.exe"
+        };
+        var off = new CpuTempWidget.Models.AppSettings { AutoCheckUpdates = true, AutoInstallUpdates = false };
+        Assert.False(UpdateService.ShouldAutoInstall(update, off));
+
+        var on = new CpuTempWidget.Models.AppSettings { AutoCheckUpdates = true, AutoInstallUpdates = true };
+        Assert.True(UpdateService.ShouldAutoInstall(update, on));
+
+        var mandatory = new UpdateCheckResult
+        {
+            UpdateAvailable = true,
+            LatestVersion = "9.9.9",
+            DownloadUrl = "http://127.0.0.1/x.exe",
+            IsMandatory = true
+        };
+        Assert.True(UpdateService.ShouldAutoInstall(mandatory, off));
+    }
 }
 
 public class BootstrapServiceTests

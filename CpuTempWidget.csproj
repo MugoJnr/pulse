@@ -10,7 +10,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Pulse</AssemblyName>
     <RootNamespace>CpuTempWidget</RootNamespace>
-    <Version>1.12.2</Version>
+    <Version>1.12.3</Version>
     <Description>Pulse — production Windows command center by MugoByte Technologies</Description>
     <Copyright>Copyright © MugoByte Technologies</Copyright>
     <SelfContained>false</SelfContained>
