@@ -22,6 +22,31 @@ public partial class App : Application
     {
         _instance = this;
 
+        // Elevated headless LHM probe — must run before single-instance / UI.
+        if (e.Args.Any(a => a.Equals("--lhm-sensor-probe", StringComparison.OrdinalIgnoreCase)))
+        {
+            try
+            {
+                var logDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "MugoByte", "Pulse");
+                Directory.CreateDirectory(logDir);
+                File.AppendAllText(Path.Combine(logDir, "startup.log"),
+                    $"[{DateTime.Now:O}] lhm-sensor-probe elevated={AdminLauncher.IsElevated}\n");
+            }
+            catch { }
+
+            try { Environment.ExitCode = SystemMonitor.RunElevatedSensorProbe(TimeSpan.FromHours(12)); }
+            catch (Exception ex)
+            {
+                try { DiagnosticLog.WriteTemp("lhm-sensor-probe crashed", ex); } catch { }
+                Environment.ExitCode = 1;
+            }
+
+            Environment.Exit(Environment.ExitCode);
+            return;
+        }
+
         try
         {
             var logDir = Path.Combine(
@@ -129,6 +154,9 @@ public partial class App : Application
         var skipAccount = e.Args.Any(a => a.Equals("--skip-account", StringComparison.OrdinalIgnoreCase));
         AppHost.Build(e.Args);
 
+        // Optional one-shot E2E sign-in: --signin-email=... --signin-password-env=PULSE_PORTAL_PASSWORD
+        TryOneShotSignIn(e.Args);
+
         var settings = SettingsService.Load();
         settings.StartWithWindows = settings.StartWithWindows || !settings.HasSeenWelcome;
         if (!settings.HasSeenWelcome)
@@ -167,6 +195,27 @@ public partial class App : Application
         if (main.IsLoaded || main.IsVisible)
             NativePowerHook.Attach(main);
 
+        if (e.Args.Any(a => a.Equals("--power-selftest", StringComparison.OrdinalIgnoreCase)))
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                try
+                {
+                    DiagnosticLog.WritePower("power-selftest begin");
+                    foreach (var reason in new[] { "PowerSuspend", "PowerResume", "Battery", "AC" })
+                    {
+                        for (var i = 0; i < 5; i++)
+                            PowerResilienceService.SimulateTransition($"{reason}-selftest-{i + 1}");
+                    }
+                    DiagnosticLog.WritePower("power-selftest complete (Suspend Resume Battery AC x5)");
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticLog.WritePower("power-selftest failed", ex);
+                }
+            }, DispatcherPriority.ApplicationIdle);
+        }
+
         _hotkeys = new HotkeyService();
         _hotkeys.Register(main);
 
@@ -182,6 +231,30 @@ public partial class App : Application
             {
                 await Task.Delay(1500);
                 await LocalUpdateE2E.RunAfterMainWindowAsync();
+            }, DispatcherPriority.ApplicationIdle);
+        }
+
+        if (e.Args.Any(a => a.Equals("--update-selftest", StringComparison.OrdinalIgnoreCase)))
+        {
+            Dispatcher.BeginInvoke(async () =>
+            {
+                try
+                {
+                    await Task.Delay(800);
+                    var center = AppHost.Get<UpdateCenter>();
+                    var current = Branding.Version;
+                    // Probe against an older version so latest release is reported as available when present.
+                    var probe = "1.0.0";
+                    var candidate = await center.CheckAsync(probe);
+                    if (candidate is null)
+                        DiagnosticLog.Write("platform.log", $"update-selftest: CheckAsync returned null (up-to-date or failed) current={current} repo={Branding.GitHubRepo} phase={center.Phase}");
+                    else
+                        DiagnosticLog.Write("platform.log", $"update-selftest: OK tag={candidate.Tag} version={candidate.Version} asset={candidate.AssetName} urlHost={(Uri.TryCreate(candidate.AssetUrl, UriKind.Absolute, out var u) ? u.Host : "?")}");
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticLog.WriteError("update-selftest failed", ex);
+                }
             }, DispatcherPriority.ApplicationIdle);
         }
 
@@ -288,11 +361,46 @@ public partial class App : Application
         }
     }
 
+    /// <summary>
+    /// E2E-only: <c>--signin-email=user@x</c> + <c>--signin-password-env=PULSE_PORTAL_PASSWORD</c>.
+    /// Password is read from the named env var (never logged).
+    /// </summary>
+    private static void TryOneShotSignIn(string[] args)
+    {
+        try
+        {
+            var emailArg = args.FirstOrDefault(a => a.StartsWith("--signin-email=", StringComparison.OrdinalIgnoreCase));
+            var envArg = args.FirstOrDefault(a => a.StartsWith("--signin-password-env=", StringComparison.OrdinalIgnoreCase));
+            if (emailArg is null || envArg is null) return;
+
+            var email = emailArg["--signin-email=".Length..].Trim().Trim('"');
+            var envName = envArg["--signin-password-env=".Length..].Trim().Trim('"');
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(envName)) return;
+
+            var password = Environment.GetEnvironmentVariable(envName);
+            if (string.IsNullOrEmpty(password))
+            {
+                DiagnosticLog.Write("platform.log", $"signin-e2e skipped — env {envName} not set");
+                return;
+            }
+
+            var activation = AppHost.Get<IActivationService>();
+            var result = activation.SignInAndActivateAsync(email, password).GetAwaiter().GetResult();
+            DiagnosticLog.Write("platform.log",
+                result.Ok ? $"signin-e2e ok for {email}" : $"signin-e2e failed: {result.Message}");
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.WriteError("signin-e2e failed", ex);
+        }
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         try { UnregisterApplicationRestart(); } catch { }
         try { _tray?.Dispose(); } catch { }
         try { _power?.Dispose(); } catch { }
+        try { NativePowerHook.Detach(); } catch { }
         try { SystemMonitor.ShutdownSampler(); } catch { }
         _hotkeys?.Dispose();
         try { AppHost.Get<PlatformSyncHost>().Dispose(); } catch { }

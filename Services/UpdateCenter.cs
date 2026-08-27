@@ -121,14 +121,39 @@ public sealed class UpdateCenter : IDisposable
 
     // ── Public API ────────────────────────────────────────────────────────────────
 
+    private static string NormalizeGitHubRepo(string repo)
+    {
+        var cleaned = (repo ?? "").Trim().Trim('/');
+        // Accept full URLs or owner/name; never EscapeDataString the slash (breaks API path).
+        if (cleaned.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
+            cleaned = cleaned["https://github.com/".Length..];
+        if (cleaned.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
+            cleaned = cleaned[..^4];
+        var parts = cleaned.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0]}/{parts[1]}";
+        return cleaned;
+    }
+
+    private void ApplyGitHubAuth(HttpRequestMessage req)
+    {
+        var token = Environment.GetEnvironmentVariable("MBT_GITHUB_TOKEN")
+                    ?? Environment.GetEnvironmentVariable("GH_TOKEN")
+                    ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+        if (string.IsNullOrWhiteSpace(token)) return;
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
+    }
+
     public async Task<UpdateCandidate?> CheckAsync(string currentVersion, CancellationToken ct = default)
     {
         SetPhase(UpdatePhase.Checking);
         try
         {
-            var url = $"https://api.github.com/repos/{Uri.EscapeDataString(_repo)}/releases/latest";
+            var repo = NormalizeGitHubRepo(_repo);
+            var url = $"https://api.github.com/repos/{repo}/releases/latest";
             using var req = new HttpRequestMessage(HttpMethod.Get, url);
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            ApplyGitHubAuth(req);
 
             using var res = await _http.SendAsync(req, ct);
             if (!res.IsSuccessStatusCode)
@@ -255,6 +280,7 @@ public sealed class UpdateCenter : IDisposable
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Get, candidate.AssetUrl);
+            ApplyGitHubAuth(req);
             using var res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
             if (!res.IsSuccessStatusCode)
             {

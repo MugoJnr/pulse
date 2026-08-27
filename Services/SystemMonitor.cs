@@ -104,10 +104,21 @@ public sealed class SystemMonitor : IDisposable
                     var intervalSeconds = _tempFailStreak == 0 ? 5 : Math.Min(30, 4 * _tempFailStreak);
                     _sTempNextUtc = now.AddSeconds(intervalSeconds);
 
-                    var reading = TryReadPerfThermalZone(preferCpuNamed: true)
-                                  ?? TryReadAcpiThermalZone()
-                                  ?? TryReadPerfThermalZone(preferCpuNamed: false)
-                                  ?? TryReadLibreHardwareMonitor();
+                    // Publish WMI thermal immediately so UI/tests are not blocked by LHM Open().
+                    var wmi = TryReadPerfThermalZone(preferCpuNamed: true)
+                              ?? TryReadAcpiThermalZone()
+                              ?? TryReadPerfThermalZone(preferCpuNamed: false);
+                    if (wmi is { } wmiHit)
+                    {
+                        _sTempC = wmiHit.Value;
+                        _sTempSource = wmiHit.Source;
+                        _sTempAtUtc = now;
+                        _tempFailStreak = 0;
+                    }
+
+                    // Cached LHM upgrade when CPU Package/Tctl is available.
+                    var lhm = TryReadLibreHardwareMonitorCached();
+                    var reading = PreferCpuPackageReading(lhm, wmi);
                     if (reading is { } hit)
                     {
                         _sTempC = hit.Value;
@@ -115,7 +126,7 @@ public sealed class SystemMonitor : IDisposable
                         _sTempAtUtc = now;
                         _tempFailStreak = 0;
                     }
-                    else
+                    else if (wmi is null)
                     {
                         _tempFailStreak = Math.Min(_tempFailStreak + 1, 6);
                         if (_tempFailStreak >= 3)
@@ -220,6 +231,7 @@ public sealed class SystemMonitor : IDisposable
                 DisposeGpuCountersUnlocked();
                 _gpuCountersPrimed = false;
             }
+            CloseLibreHardwareMonitor();
             DiagnosticLog.WritePower("ShutdownSampler");
         }
         catch (Exception ex)
@@ -446,11 +458,120 @@ public sealed class SystemMonitor : IDisposable
     }
 
     /// <summary>
-    /// Optional LibreHardwareMonitor fallback when WMI thermal zones fail.
-    /// Soft-loads the assembly so missing NuGet package does not break the build.
+    /// Prefer LHM CPU Package/Tctl over ACPI/Perf thermal zones labeled "not CPU package".
+    /// </summary>
+    private static TempHit? PreferCpuPackageReading(TempHit? lhm, TempHit? wmi)
+    {
+        if (lhm is null) return wmi;
+        if (wmi is null) return lhm;
+        if (IsCpuPackageLike(lhm.Value.Source)) return lhm;
+        if (IsCpuPackageLike(wmi.Value.Source)) return wmi;
+        // LHM still preferred over generic thermal zones when neither is clearly package-named.
+        return lhm;
+    }
+
+    private static bool IsCpuPackageLike(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source)) return false;
+        if (source.Contains("not CPU package", StringComparison.OrdinalIgnoreCase))
+            return false;
+        return source.Contains("Package", StringComparison.OrdinalIgnoreCase)
+               || source.Contains("Tctl", StringComparison.OrdinalIgnoreCase)
+               || source.Contains("LHM:", StringComparison.OrdinalIgnoreCase)
+               || source.Contains("CPU Core", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static TempHit? _lhmCache;
+    private static DateTime _lhmNextUtc = DateTime.MinValue;
+    private static bool _lhmFailLogged;
+    private static bool _lhmInventoryLogged;
+    private static bool _lhmElevationQueued;
+    private static readonly object LhmGate = new();
+    private static object? _lhmComputer;
+    private static Type? _lhmComputerType;
+    private static Type? _lhmIHardware;
+    private static Type? _lhmISensor;
+    private static object? _lhmTempEnum;
+    private static bool _lhmOpenFailed;
+
+    /// <summary>Shared live cache written by elevated <c>--lhm-sensor-probe</c>.</summary>
+    public static string LhmLiveCachePath =>
+        Path.Combine(DiagnosticLog.LogDirectory, "lhm-live.json");
+
+    /// <summary>Cached LHM probe — keeps Computer open; Update() is cheap after Open().</summary>
+    private static TempHit? TryReadLibreHardwareMonitorCached()
+    {
+        var now = DateTime.UtcNow;
+        if (now < _lhmNextUtc)
+            return _lhmCache;
+
+        _lhmNextUtc = now.AddSeconds(15);
+        try
+        {
+            _lhmCache = TryReadLibreHardwareMonitor() ?? TryReadElevatedLhmCache();
+            if (_lhmCache is null)
+            {
+                if (!_lhmFailLogged)
+                {
+                    _lhmFailLogged = true;
+                    DiagnosticLog.WriteTemp(
+                        AdminLauncher.IsElevated
+                            ? "LHM: zero temperature values even when elevated (hardware/driver limitation)"
+                            : "LHM: no usable CPU Package/Tctl/core values (Ring0 often needs elevation) - using WMI thermal fallback");
+                }
+                MaybeOfferLhmElevationOnce();
+            }
+            else if (_lhmCache is { } hit)
+            {
+                DiagnosticLog.WriteTemp($"LHM ok source={hit.Source} temp={hit.Value:0.0}C elevated={AdminLauncher.IsElevated}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _lhmCache = null;
+            if (!_lhmFailLogged)
+            {
+                _lhmFailLogged = true;
+                DiagnosticLog.WriteTemp("LHM probe failed", ex);
+            }
+        }
+
+        return _lhmCache;
+    }
+
+    /// <summary>
+    /// Optional LibreHardwareMonitor path for true CPU package / Tctl / core sensors.
+    /// Soft-loads the assembly; Open with CPU+motherboard, Accept/Update recurse including SubHardware.
     /// </summary>
     private static TempHit? TryReadLibreHardwareMonitor()
     {
+        lock (LhmGate)
+        {
+            if (!EnsureLibreHardwareMonitorOpen())
+                return null;
+
+            try
+            {
+                AcceptOrUpdateAllHardware();
+                var hit = CollectBestLhmTemperature();
+                if (hit is null)
+                    hit = CollectBestLhmTemperature(); // second pass after Ring0 settles
+                return hit;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    private static bool EnsureLibreHardwareMonitorOpen()
+    {
+        if (_lhmComputer is not null && _lhmComputerType is not null)
+            return true;
+        if (_lhmOpenFailed)
+            return false;
+
         try
         {
             var asm = AppDomain.CurrentDomain.GetAssemblies()
@@ -458,83 +579,418 @@ public sealed class SystemMonitor : IDisposable
             if (asm is null)
             {
                 try { asm = System.Reflection.Assembly.Load("LibreHardwareMonitorLib"); }
-                catch { return null; }
+                catch { /* try path below */ }
+            }
+            if (asm is null)
+            {
+                var path = Path.Combine(AppContext.BaseDirectory, "LibreHardwareMonitorLib.dll");
+                if (File.Exists(path))
+                    asm = System.Reflection.Assembly.LoadFrom(path);
+            }
+            if (asm is null)
+            {
+                _lhmOpenFailed = true;
+                return false;
             }
 
             var computerType = asm.GetType("LibreHardwareMonitor.Hardware.Computer");
             var iHardware = asm.GetType("LibreHardwareMonitor.Hardware.IHardware");
             var iSensor = asm.GetType("LibreHardwareMonitor.Hardware.ISensor");
-            var hardwareType = asm.GetType("LibreHardwareMonitor.Hardware.HardwareType");
             var sensorType = asm.GetType("LibreHardwareMonitor.Hardware.SensorType");
-            if (computerType is null || iHardware is null || iSensor is null || hardwareType is null || sensorType is null)
-                return null;
+            if (computerType is null || iHardware is null || iSensor is null || sensorType is null)
+            {
+                _lhmOpenFailed = true;
+                return false;
+            }
 
             var computer = Activator.CreateInstance(computerType);
-            if (computer is null) return null;
+            if (computer is null)
+            {
+                _lhmOpenFailed = true;
+                return false;
+            }
 
             computerType.GetProperty("IsCpuEnabled")?.SetValue(computer, true);
+            computerType.GetProperty("IsMotherboardEnabled")?.SetValue(computer, true);
             computerType.GetMethod("Open")?.Invoke(computer, null);
 
-            try
+            _lhmComputer = computer;
+            _lhmComputerType = computerType;
+            _lhmIHardware = iHardware;
+            _lhmISensor = iSensor;
+            _lhmTempEnum = Enum.Parse(sensorType, "Temperature");
+
+            // Prefer IVisitor Accept when present (official UpdateVisitor pattern).
+            TryAcceptUpdateVisitor(asm, computer, computerType);
+            Thread.Sleep(200);
+            AcceptOrUpdateAllHardware();
+
+            DiagnosticLog.WriteTemp(
+                $"LHM Open ok elevated={AdminLauncher.IsElevated} cpu+motherboard enabled");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _lhmOpenFailed = true;
+            DiagnosticLog.WriteTemp("LHM Open failed", ex);
+            CloseLibreHardwareMonitor();
+            return false;
+        }
+    }
+
+    private static void TryAcceptUpdateVisitor(System.Reflection.Assembly asm, object computer, Type computerType)
+    {
+        try
+        {
+            var iVisitor = asm.GetType("LibreHardwareMonitor.Hardware.IVisitor");
+            var iComputer = asm.GetType("LibreHardwareMonitor.Hardware.IComputer");
+            var iHardware = asm.GetType("LibreHardwareMonitor.Hardware.IHardware");
+            var iSensor = asm.GetType("LibreHardwareMonitor.Hardware.ISensor");
+            var iParameter = asm.GetType("LibreHardwareMonitor.Hardware.IParameter");
+            if (iVisitor is null || iComputer is null || iHardware is null || iSensor is null || iParameter is null)
+                return;
+
+            // Hand-rolled visitor via Update/SubHardware recurse is enough; Accept(null) is unsafe.
+            // Call Computer.Accept only if LibreHardwareMonitor ships UpdateVisitor in this build.
+            var updateVisitorType = asm.GetType("LibreHardwareMonitor.Hardware.UpdateVisitor");
+            if (updateVisitorType is null) return;
+            var visitor = Activator.CreateInstance(updateVisitorType);
+            if (visitor is null) return;
+            computerType.GetMethod("Accept", new[] { iVisitor })?.Invoke(computer, new[] { visitor });
+        }
+        catch
+        {
+            // Fall through to manual Update recurse.
+        }
+    }
+
+    private static void AcceptOrUpdateAllHardware()
+    {
+        if (_lhmComputer is null || _lhmComputerType is null || _lhmIHardware is null)
+            return;
+
+        try
+        {
+            var asm = _lhmComputerType.Assembly;
+            var updateVisitorType = asm.GetType("LibreHardwareMonitor.Hardware.UpdateVisitor");
+            var iVisitor = asm.GetType("LibreHardwareMonitor.Hardware.IVisitor");
+            if (updateVisitorType is not null && iVisitor is not null)
             {
-                var cpuEnum = Enum.Parse(hardwareType, "Cpu");
-                var tempEnum = Enum.Parse(sensorType, "Temperature");
-                var hardwareProp = computerType.GetProperty("Hardware");
-                if (hardwareProp?.GetValue(computer) is not System.Collections.IEnumerable hardwareList)
-                    return null;
-
-                float? package = null;
-                float? tctl = null;
-                float? coreMax = null;
-
-                foreach (var hw in hardwareList)
+                var visitor = Activator.CreateInstance(updateVisitorType);
+                if (visitor is not null)
                 {
-                    if (hw is null) continue;
-                    var ht = iHardware.GetProperty("HardwareType")?.GetValue(hw);
-                    if (ht is null || !Equals(ht, cpuEnum)) continue;
-                    iHardware.GetMethod("Update")?.Invoke(hw, null);
-                    if (iHardware.GetProperty("Sensors")?.GetValue(hw) is not System.Collections.IEnumerable sensors)
+                    _lhmComputerType.GetMethod("Accept", new[] { iVisitor })
+                        ?.Invoke(_lhmComputer, new[] { visitor });
+                    return;
+                }
+            }
+        }
+        catch { /* manual recurse below */ }
+
+        if (_lhmComputerType.GetProperty("Hardware")?.GetValue(_lhmComputer) is not System.Collections.IEnumerable list)
+            return;
+        foreach (var hw in list)
+        {
+            if (hw is null) continue;
+            UpdateHardwareTree(hw);
+        }
+    }
+
+    private static void UpdateHardwareTree(object hw)
+    {
+        if (_lhmIHardware is null) return;
+        try { _lhmIHardware.GetMethod("Update")?.Invoke(hw, null); } catch { }
+        if (_lhmIHardware.GetProperty("SubHardware")?.GetValue(hw) is not System.Collections.IEnumerable subs)
+            return;
+        foreach (var sub in subs)
+        {
+            if (sub is null) continue;
+            UpdateHardwareTree(sub);
+        }
+    }
+
+    private static TempHit? CollectBestLhmTemperature()
+    {
+        if (_lhmComputer is null || _lhmComputerType is null || _lhmIHardware is null || _lhmISensor is null || _lhmTempEnum is null)
+            return null;
+        if (_lhmComputerType.GetProperty("Hardware")?.GetValue(_lhmComputer) is not System.Collections.IEnumerable list)
+            return null;
+
+        float? package = null, tctl = null, ccd = null, coreMax = null, cpuNamed = null, anyCpu = null, any = null;
+        string? packageName = null, tctlName = null, ccdName = null, coreMaxName = null, cpuNamedName = null, anyCpuName = null, anyName = null;
+        var inventory = new List<string>();
+        var nullCount = 0;
+        var valueCount = 0;
+
+        void Consider(object hw, bool underCpu)
+        {
+            var hwType = _lhmIHardware!.GetProperty("HardwareType")?.GetValue(hw)?.ToString() ?? "";
+            var isCpu = hwType.Equals("Cpu", StringComparison.OrdinalIgnoreCase) || underCpu;
+            var isMb = hwType.Equals("Motherboard", StringComparison.OrdinalIgnoreCase)
+                       || hwType.Equals("SuperIO", StringComparison.OrdinalIgnoreCase)
+                       || hwType.Equals("EmbeddedController", StringComparison.OrdinalIgnoreCase);
+
+            if (_lhmIHardware.GetProperty("Sensors")?.GetValue(hw) is System.Collections.IEnumerable sensors)
+            {
+                foreach (var s in sensors)
+                {
+                    if (s is null) continue;
+                    var st = _lhmISensor!.GetProperty("SensorType")?.GetValue(s);
+                    if (st is null || !Equals(st, _lhmTempEnum)) continue;
+                    var name = _lhmISensor.GetProperty("Name")?.GetValue(s)?.ToString() ?? "";
+                    if (name.Contains("Distance to TjMax", StringComparison.OrdinalIgnoreCase)
+                        || name.Contains("TjMax", StringComparison.OrdinalIgnoreCase) && name.Contains("Distance", StringComparison.OrdinalIgnoreCase))
                         continue;
 
-                    foreach (var s in sensors)
+                    var valObj = _lhmISensor.GetProperty("Value")?.GetValue(s);
+                    if (valObj is null)
                     {
-                        if (s is null) continue;
-                        var st = iSensor.GetProperty("SensorType")?.GetValue(s);
-                        if (st is null || !Equals(st, tempEnum)) continue;
-                        var name = iSensor.GetProperty("Name")?.GetValue(s)?.ToString() ?? "";
-                        var valObj = iSensor.GetProperty("Value")?.GetValue(s);
-                        if (valObj is null) continue;
-                        var val = Convert.ToSingle(valObj, CultureInfo.InvariantCulture);
-                        if (val is < 10 or > 125) continue;
+                        nullCount++;
+                        inventory.Add($"{hwType}/{name}=null");
+                        continue;
+                    }
 
-                        if (name.Contains("Package", StringComparison.OrdinalIgnoreCase)
-                            || name.Contains("CPU Package", StringComparison.OrdinalIgnoreCase))
-                            package = package is null ? val : Math.Max(package.Value, val);
-                        else if (name.Contains("Tctl", StringComparison.OrdinalIgnoreCase))
-                            tctl = tctl is null ? val : Math.Max(tctl.Value, val);
-                        else if (name.Contains("Core", StringComparison.OrdinalIgnoreCase))
-                            coreMax = coreMax is null ? val : Math.Max(coreMax.Value, val);
+                    var val = Convert.ToSingle(valObj, CultureInfo.InvariantCulture);
+                    if (val is < 10 or > 125) continue;
+                    valueCount++;
+                    inventory.Add($"{hwType}/{name}={val:0.0}");
+
+                    var rank = ScoreLhmSensorName(name);
+                    if (rank >= 100)
+                    {
+                        if (package is null || val > package) { package = val; packageName = name; }
+                    }
+                    else if (rank >= 95)
+                    {
+                        if (tctl is null || val > tctl) { tctl = val; tctlName = name; }
+                    }
+                    else if (rank >= 90)
+                    {
+                        if (ccd is null || val > ccd) { ccd = val; ccdName = name; }
+                    }
+                    else if (rank >= 85)
+                    {
+                        if (coreMax is null || val > coreMax) { coreMax = val; coreMaxName = name; }
+                    }
+                    else if (rank >= 50 && isCpu)
+                    {
+                        if (cpuNamed is null || val > cpuNamed) { cpuNamed = val; cpuNamedName = name; }
+                    }
+                    else if (isCpu)
+                    {
+                        if (anyCpu is null || val > anyCpu) { anyCpu = val; anyCpuName = name; }
+                    }
+                    else if (isMb || isCpu)
+                    {
+                        if (any is null || val > any) { any = val; anyName = name; }
                     }
                 }
+            }
 
-                if (package is float p)
-                    return new TempHit(p, "LHM:CPU Package");
-                if (tctl is float t)
-                    return new TempHit(t, "LHM:Tctl");
-                if (coreMax is float c)
-                    return new TempHit(c, "LHM:CPU Core max");
-                return null;
-            }
-            finally
+            if (_lhmIHardware.GetProperty("SubHardware")?.GetValue(hw) is System.Collections.IEnumerable subs)
             {
-                try { computerType.GetMethod("Close")?.Invoke(computer, null); } catch { }
-                try { (computer as IDisposable)?.Dispose(); } catch { }
+                foreach (var sub in subs)
+                {
+                    if (sub is null) continue;
+                    Consider(sub, isCpu);
+                }
             }
+        }
+
+        foreach (var hw in list)
+        {
+            if (hw is null) continue;
+            Consider(hw, underCpu: false);
+        }
+
+        if (!_lhmInventoryLogged && (inventory.Count > 0 || nullCount > 0))
+        {
+            _lhmInventoryLogged = true;
+            var sample = string.Join("; ", inventory.Take(24));
+            DiagnosticLog.WriteTemp(
+                $"LHM inventory values={valueCount} nulls={nullCount} elevated={AdminLauncher.IsElevated} sample=[{sample}]");
+        }
+
+        if (package is float p)
+            return new TempHit(p, "LHM:CPU Package" + (packageName is null ? "" : $" ({packageName})"));
+        if (tctl is float t)
+            return new TempHit(t, "LHM:Tctl" + (tctlName is null ? "" : $" ({tctlName})"));
+        if (ccd is float d)
+            return new TempHit(d, "LHM:CCD" + (ccdName is null ? "" : $" ({ccdName})"));
+        if (coreMax is float c)
+            return new TempHit(c, "LHM:CPU Core max" + (coreMaxName is null ? "" : $" ({coreMaxName})"));
+        if (cpuNamed is float cn)
+            return new TempHit(cn, "LHM:CPU" + (cpuNamedName is null ? "" : $" ({cpuNamedName})"));
+        if (anyCpu is float ac)
+            return new TempHit(ac, "LHM:CPU" + (anyCpuName is null ? "" : $" ({anyCpuName})"));
+        if (any is float a)
+            return new TempHit(a, "LHM:temp" + (anyName is null ? "" : $" ({anyName})"));
+        return null;
+    }
+
+    /// <summary>Package &gt; Tctl &gt; CCD &gt; Core Max &gt; CPU-named &gt; other.</summary>
+    private static int ScoreLhmSensorName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return 10;
+        if (name.Contains("Package", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("CPU Package", StringComparison.OrdinalIgnoreCase))
+            return 100;
+        if (name.Contains("Tctl", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Tdie", StringComparison.OrdinalIgnoreCase))
+            return 95;
+        if (name.Contains("CCD", StringComparison.OrdinalIgnoreCase))
+            return 90;
+        if (name.Contains("Core Max", StringComparison.OrdinalIgnoreCase)
+            || name.Equals("Max", StringComparison.OrdinalIgnoreCase))
+            return 85;
+        if (name.Contains("Core Average", StringComparison.OrdinalIgnoreCase)
+            || name.Contains("Average", StringComparison.OrdinalIgnoreCase))
+            return 70;
+        if (name.Contains("Core", StringComparison.OrdinalIgnoreCase))
+            return 60;
+        if (name.Contains("CPU", StringComparison.OrdinalIgnoreCase))
+            return 50;
+        return 20;
+    }
+
+    private static TempHit? TryReadElevatedLhmCache()
+    {
+        try
+        {
+            var path = LhmLiveCachePath;
+            if (!File.Exists(path)) return null;
+            var age = DateTime.UtcNow - File.GetLastWriteTimeUtc(path);
+            if (age > TimeSpan.FromSeconds(90)) return null;
+            var json = File.ReadAllText(path);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("tempC", out var t) || t.ValueKind != System.Text.Json.JsonValueKind.Number)
+                return null;
+            var val = t.GetSingle();
+            if (val is < 10 or > 125) return null;
+            var src = root.TryGetProperty("source", out var s) ? s.GetString() : null;
+            if (string.IsNullOrWhiteSpace(src)) src = "LHM:elevated-cache";
+            else if (!src.StartsWith("LHM:", StringComparison.OrdinalIgnoreCase))
+                src = "LHM:" + src;
+            return new TempHit(val, src + " (elevated helper)");
         }
         catch
         {
             return null;
         }
+    }
+
+    private static void MaybeOfferLhmElevationOnce()
+    {
+        if (_lhmElevationQueued || AdminLauncher.IsElevated) return;
+        // Fresh elevated cache already present — skip UAC.
+        try
+        {
+            var path = LhmLiveCachePath;
+            if (File.Exists(path) && DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromSeconds(60))
+                return;
+        }
+        catch { }
+
+        _lhmElevationQueued = true;
+        try
+        {
+            var settings = SettingsService.Load();
+            var first = !settings.LhmElevationOffered;
+            settings.LhmElevationOffered = true;
+            SettingsService.Save(settings);
+            DiagnosticLog.WriteTemp(first
+                ? "LHM: offering elevated sensor probe (--lhm-sensor-probe); approve UAC for CPU Package"
+                : "LHM: restarting elevated sensor probe (cache stale); approve UAC if prompted");
+            _ = System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    // Non-blocking soft path - UAC decline simply continues on WMI.
+                    // Do NOT pass --noelevate (that blocks Verb=runas). Child probe never re-elevates.
+                    AdminLauncher.TryRelaunchElevated(new[]
+                    {
+                        "--lhm-sensor-probe",
+                        "--skip-account"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    DiagnosticLog.WriteTemp("LHM elevation offer failed", ex);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.WriteTemp("LHM elevation offer setup failed", ex);
+        }
+    }
+
+    private static void CloseLibreHardwareMonitor()
+    {
+        lock (LhmGate)
+        {
+            try
+            {
+                if (_lhmComputer is not null && _lhmComputerType is not null)
+                {
+                    try { _lhmComputerType.GetMethod("Close")?.Invoke(_lhmComputer, null); } catch { }
+                    try { (_lhmComputer as IDisposable)?.Dispose(); } catch { }
+                }
+            }
+            finally
+            {
+                _lhmComputer = null;
+                _lhmComputerType = null;
+                _lhmIHardware = null;
+                _lhmISensor = null;
+                _lhmTempEnum = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Elevated headless probe: Open LHM, write <see cref="LhmLiveCachePath"/> for ~2 minutes, then exit.
+    /// Invoked via <c>--lhm-sensor-probe</c> before UI/single-instance.
+    /// </summary>
+    public static int RunElevatedSensorProbe(TimeSpan? duration = null)
+    {
+        var until = DateTime.UtcNow + (duration ?? TimeSpan.FromHours(12));
+        DiagnosticLog.WriteTemp($"LHM elevated probe start elevated={AdminLauncher.IsElevated}");
+        try
+        {
+            while (DateTime.UtcNow < until)
+            {
+                var hit = TryReadLibreHardwareMonitor();
+                if (hit is { } h)
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(DiagnosticLog.LogDirectory);
+                        var json =
+                            $"{{\"tempC\":{h.Value.ToString(CultureInfo.InvariantCulture)},\"source\":{System.Text.Json.JsonSerializer.Serialize(h.Source)},\"at\":\"{DateTime.UtcNow:O}\",\"elevated\":{(AdminLauncher.IsElevated ? "true" : "false")}}}";
+                        File.WriteAllText(LhmLiveCachePath, json);
+                        DiagnosticLog.WriteTemp($"LHM elevated probe wrote {h.Source}={h.Value:0.0}C");
+                    }
+                    catch (Exception ex)
+                    {
+                        DiagnosticLog.WriteTemp("LHM elevated probe write failed", ex);
+                    }
+                }
+                else
+                {
+                    DiagnosticLog.WriteTemp("LHM elevated probe: still no temperature values");
+                }
+
+                Thread.Sleep(5000);
+            }
+        }
+        finally
+        {
+            CloseLibreHardwareMonitor();
+        }
+
+        return 0;
     }
 
     private static TempHit? PickBestTemp(

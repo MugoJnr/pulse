@@ -47,4 +47,8 @@ public static class DiagnosticLog
 
     public static void WriteTemp(string message, Exception? ex = null, string? context = null) =>
         Write("temp.log", message, ex, context);
+
+    /// <summary>Marker written immediately before a live SetSuspendState attempt.</summary>
+    public static void WritePreSleepMarker(string detail = "") =>
+        WritePower("PreSleepMarker", context: string.IsNullOrWhiteSpace(detail) ? null : detail);
 }

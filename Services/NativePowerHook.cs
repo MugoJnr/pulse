@@ -44,6 +44,7 @@ public static class NativePowerHook
             _hConsoleDisplay = RegisterPowerSettingNotification(hwnd, ref consoleDisplay, 0);
             _hMonitorPower = RegisterPowerSettingNotification(hwnd, ref monitorPower, 0);
             _hooked = true;
+            DiagnosticLog.WritePower($"NativePowerHook registered hwnd=0x{hwnd.ToInt64():X}");
             DiagnosticLog.WritePower("NativePowerHook attached");
         }
         catch (Exception ex)

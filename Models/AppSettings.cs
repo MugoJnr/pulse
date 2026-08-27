@@ -31,4 +31,13 @@ public sealed class AppSettings
 
     /// <summary>Keep the overlay above other windows when shown.</summary>
     public bool AlwaysOnTop { get; set; } = true;
+
+    /// <summary>
+    /// One-time optional UAC for LHM CPU Package sensors (Ring0). Once true, Pulse will not
+    /// prompt again — elevated <c>--lhm-sensor-probe</c> writes a shared cache the main process reads.
+    /// </summary>
+    public bool LhmElevationOffered { get; set; }
+
+    /// <summary>One-time portal reconnect prompt when refresh token is missing.</summary>
+    public bool PortalSignInPrompted { get; set; }
 }

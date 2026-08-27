@@ -439,7 +439,8 @@ public sealed class ActivationService : IActivationService
         var refresh = CurrentSession?.RefreshToken;
         if (string.IsNullOrWhiteSpace(refresh))
         {
-            // Cannot mint a new access token — callers must treat this as soft auth failure.
+            // Access-only / empty-refresh sessions cannot renew — clear when expired so AccountGate can appear.
+            ClearExpiredAccessOnlySession();
             if (DateTimeOffset.UtcNow - _lastNoRefreshLogUtc > TimeSpan.FromHours(1))
             {
                 _lastNoRefreshLogUtc = DateTimeOffset.UtcNow;
@@ -461,6 +462,38 @@ public sealed class ActivationService : IActivationService
         _identity.SaveSession(CurrentSession);
         _log.Info("auth", "session refreshed silently");
         return true;
+    }
+
+    /// <summary>
+    /// Removes expired access-token-only sessions (no refreshToken) so AccountGate can prompt sign-in.
+    /// Never touches activation.bin.
+    /// </summary>
+    private void ClearExpiredAccessOnlySession()
+    {
+        try
+        {
+            var session = CurrentSession ?? _identity.LoadSession();
+            if (session is null) return;
+            if (!string.IsNullOrWhiteSpace(session.RefreshToken)) return;
+
+            var exp = session.ExpiresAt;
+            if (exp is null
+                && !string.IsNullOrWhiteSpace(session.AccessToken)
+                && AccessTokenExpiry.TryReadExp(session.AccessToken, out var jwtExp))
+                exp = jwtExp;
+
+            // Unknown expiry with no refresh is unusable for renewal — clear it.
+            if (exp is null || exp <= DateTimeOffset.UtcNow)
+            {
+                _identity.ClearSession();
+                CurrentSession = null;
+                _log.Info("auth", "cleared expired access-only session — sign in required (activation preserved)");
+            }
+        }
+        catch
+        {
+            // non-fatal
+        }
     }
 
     private bool MigrateStoredActivationToFreeTier()

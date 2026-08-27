@@ -1,4 +1,4 @@
-# E2E update: build 1.12.0 setup, serve via http.server, mock-update-url download→checksum→stage.
+# E2E update: build setup, serve via http.server, mock-update-url download→checksum→stage.
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path (Join-Path $root "CpuTempWidget.csproj"))) {
@@ -9,7 +9,12 @@ if (-not (Test-Path (Join-Path $root "CpuTempWidget.csproj"))) {
 }
 
 Set-Location $root
-Write-Host "Building setup..."
+$ver = "1.12.1"
+$csproj = Join-Path $root "CpuTempWidget.csproj"
+$m = Select-String -Path $csproj -Pattern '<Version>([^<]+)</Version>' | Select-Object -First 1
+if ($m) { $ver = $m.Matches[0].Groups[1].Value }
+
+Write-Host "Building setup (v$ver)..."
 & (Join-Path $root "build-setup.ps1")
 if ($LASTEXITCODE -ne 0) { throw "build-setup.ps1 failed" }
 
@@ -42,13 +47,13 @@ try {
 
     $stageDir = Join-Path $env:LOCALAPPDATA "MugoByte\Pulse\updates"
     New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
-    $staged = Join-Path $stageDir "Pulse-Setup-1.12.0.exe"
+    $staged = Join-Path $stageDir "Pulse-Setup-$ver.exe"
     Copy-Item $tmp $staged -Force
     $stageHash = (Get-FileHash -Algorithm SHA256 $staged).Hash.ToLowerInvariant()
     if ($stageHash -ne $hash) { throw "Staged hash mismatch" }
 
     Write-Host "PASS: download→checksum→stage OK ($staged)"
-    Write-Host "Mock args for app: --mock-update-url=$url --mock-update-version=1.12.0"
+    Write-Host "Mock args for app: --mock-update-url=$url --mock-update-version=$ver"
     Write-Host "(Installer launch skipped in script; UpdateService path verified by staging + hash.)"
 }
 finally {
