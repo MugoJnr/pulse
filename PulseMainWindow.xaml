@@ -1,0 +1,362 @@
+<Window x:Class="CpuTempWidget.PulseMainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:CpuTempWidget.Controls"
+        Title="Pulse"
+        Width="1120"
+        Height="760"
+        MinWidth="920"
+        MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Background="#070B14"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        ResizeMode="CanResizeWithGrip"
+        ShowInTaskbar="True"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        FontFamily="Segoe UI Variable Text, Segoe UI">
+  <Window.Resources>
+    <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#2563EB" Offset="0" />
+      <GradientStop Color="#38BDF8" Offset="1" />
+    </LinearGradientBrush>
+
+    <Style x:Key="ChipStyle" TargetType="Button">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Padding" Value="14,9" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="999"
+                    Padding="{TemplateBinding Padding}" BorderThickness="1" BorderBrush="#22FFFFFF">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="BorderBrush" Value="#55FFFFFF" />
+                <Setter TargetName="Bd" Property="Background" Value="#18FFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="CardStyle" TargetType="Border">
+      <Setter Property="CornerRadius" Value="18" />
+      <Setter Property="Padding" Value="18" />
+      <Setter Property="Margin" Value="0,0,14,14" />
+      <Setter Property="MinWidth" Value="168" />
+      <Setter Property="MinHeight" Value="118" />
+    </Style>
+
+    <Style x:Key="ActionStyle" TargetType="Button">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Padding" Value="14,12" />
+      <Setter Property="Margin" Value="0,0,10,10" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="14"
+                    Padding="{TemplateBinding Padding}" BorderThickness="1"
+                    BorderBrush="#28FFFFFF">
+              <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.22" Color="#000000" />
+              </Border.Effect>
+              <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="BorderBrush" Value="#66A5F3FC" />
+                <Setter TargetName="Bd" Property="Background" Value="#1A2563EB" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bd" Property="Opacity" Value="0.88" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="ChromeBtn" TargetType="Button">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Width" Value="42" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#22FFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="ThumbStyle" TargetType="Thumb">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Thumb">
+            <Border x:Name="Bd" CornerRadius="6" Background="#22FFFFFF" />
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#44FFFFFF" />
+              </Trigger>
+              <Trigger Property="IsDragging" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#55FFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="DarkScrollBar" TargetType="ScrollBar">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="MinWidth" Value="8" />
+      <Setter Property="Background" Value="Transparent" />
+      <Style.Triggers>
+        <Trigger Property="Orientation" Value="Horizontal">
+          <Setter Property="Width" Value="Auto" />
+          <Setter Property="Height" Value="8" />
+          <Setter Property="MinHeight" Value="8" />
+          <Setter Property="MinWidth" Value="0" />
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DarkScrollViewer" TargetType="ScrollViewer">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ScrollViewer">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <ScrollContentPresenter Grid.Column="0" Grid.Row="0"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      CanContentScroll="{TemplateBinding CanContentScroll}" />
+              <ScrollBar x:Name="PART_VerticalScrollBar"
+                         Grid.Column="1" Grid.Row="0"
+                         Style="{StaticResource DarkScrollBar}"
+                         Value="{TemplateBinding VerticalOffset}"
+                         Maximum="{TemplateBinding ScrollableHeight}"
+                         ViewportSize="{TemplateBinding ViewportHeight}"
+                         Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+              <ScrollBar x:Name="PART_HorizontalScrollBar"
+                         Grid.Column="0" Grid.Row="1"
+                         Orientation="Horizontal"
+                         Style="{StaticResource DarkScrollBar}"
+                         Value="{TemplateBinding HorizontalOffset}"
+                         Maximum="{TemplateBinding ScrollableWidth}"
+                         ViewportSize="{TemplateBinding ViewportWidth}"
+                         Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" />
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Resources>
+
+  <Border x:Name="RootChrome" BorderThickness="1" CornerRadius="0">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop x:Name="BgStop0" Color="#070B14" Offset="0" />
+        <GradientStop x:Name="BgStop1" Color="#0B1220" Offset="0.45" />
+        <GradientStop x:Name="BgStop2" Color="#0F1B33" Offset="1" />
+      </LinearGradientBrush>
+    </Border.Background>
+    <Grid>
+      <!-- Soft accent glow -->
+      <Ellipse Width="520" Height="520" HorizontalAlignment="Right" VerticalAlignment="Top"
+               Margin="0,-180,-160,0" Opacity="0.18" IsHitTestVisible="False">
+        <Ellipse.Fill>
+          <RadialGradientBrush>
+            <GradientStop Color="#2563EB" Offset="0" />
+            <GradientStop Color="#002563EB" Offset="1" />
+          </RadialGradientBrush>
+        </Ellipse.Fill>
+      </Ellipse>
+
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="56" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar -->
+        <Border x:Name="TitleBar" Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                Background="#08000000">
+          <Grid Margin="20,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <Border Width="40" Height="28" CornerRadius="8" Margin="0,0,12,0"
+                      Background="#222563EB" VerticalAlignment="Center">
+                <controls:PulseMark x:Name="LogoMark" Width="28" Height="16"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <TextBlock x:Name="TitleText" Text="Pulse" FontSize="20" FontWeight="SemiBold"
+                         FontFamily="Segoe UI Variable Display, Segoe UI" VerticalAlignment="Center" />
+              <Border Margin="12,0,0,0" CornerRadius="8" Padding="8,3" VerticalAlignment="Center"
+                      Background="#1A38BDF8">
+                <TextBlock x:Name="CompanyText" Text="MugoByte Technologies" FontSize="11"
+                           FontWeight="SemiBold" FontFamily="Segoe UI Variable Small, Segoe UI" />
+              </Border>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+              <Button x:Name="MinButton" Style="{StaticResource ChromeBtn}" Content="&#xE921;" Click="MinButton_Click" />
+              <Button x:Name="MaxButton" Style="{StaticResource ChromeBtn}" Content="&#xE922;" Click="MaxButton_Click" />
+              <Button x:Name="CloseButton" Style="{StaticResource ChromeBtn}" Content="&#xE8BB;" Click="CloseButton_Click" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Search -->
+        <Border Grid.Row="1" Margin="22,6,22,10">
+          <Border x:Name="SearchChrome" CornerRadius="18" BorderThickness="1.5" Padding="16,12">
+            <Border.Effect>
+              <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.35" Color="#2563EB" />
+            </Border.Effect>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource AccentGradient}"
+                      Margin="0,0,12,0">
+                <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons" FontSize="15"
+                           Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <Grid Grid.Column="1">
+                <TextBlock x:Name="SearchPlaceholder"
+                           Text="Search apps, settings, commands, processes..."
+                           FontSize="15.5" VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.55" />
+                <TextBox x:Name="SearchBox"
+                         FontSize="15.5"
+                         Foreground="#E2E8F0"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         VerticalContentAlignment="Center"
+                         CaretBrush="#38BDF8"
+                         TextChanged="SearchBox_TextChanged"
+                         PreviewKeyDown="SearchBox_PreviewKeyDown" />
+              </Grid>
+              <TextBlock Grid.Column="2" Text="Ctrl+Space" FontSize="11" Opacity="0.45"
+                         VerticalAlignment="Center" Margin="12,0,0,0" />
+            </Grid>
+          </Border>
+        </Border>
+
+        <!-- Category chips -->
+        <ScrollViewer Grid.Row="2" Margin="18,0,18,8" HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled"
+                      Style="{StaticResource DarkScrollViewer}">
+          <StackPanel x:Name="CategoryBar" Orientation="Horizontal" />
+        </ScrollViewer>
+
+        <!-- Content -->
+        <Grid Grid.Row="3" Margin="18,0,18,8">
+          <ScrollViewer x:Name="ContentScroll" VerticalScrollBarVisibility="Auto"
+                        Style="{StaticResource DarkScrollViewer}">
+            <StackPanel x:Name="ContentHost" />
+          </ScrollViewer>
+            <Border x:Name="SearchResultsPanel" Visibility="Collapsed" CornerRadius="16"
+                    Background="#101828" BorderBrush="#22FFFFFF"
+                    BorderThickness="1" Padding="6">
+            <Border.Effect>
+              <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.35" Color="#000000" />
+            </Border.Effect>
+            <ListBox x:Name="SearchList"
+                     BorderThickness="0"
+                     Background="Transparent"
+                   MouseDoubleClick="SearchList_MouseDoubleClick"
+                   MouseRightButtonUp="SearchList_MouseRightButtonUp"
+                   KeyDown="SearchList_KeyDown"
+                   SelectionChanged="SearchList_SelectionChanged">
+              <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                  <Setter Property="Padding" Value="4" />
+                  <Setter Property="Margin" Value="2" />
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                  <Setter Property="Template">
+                    <Setter.Value>
+                      <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="12" Padding="8,6">
+                          <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                          <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#332563EB" />
+                          </Trigger>
+                          <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF" />
+                          </Trigger>
+                        </ControlTemplate.Triggers>
+                      </ControlTemplate>
+                    </Setter.Value>
+                  </Setter>
+                </Style>
+              </ListBox.ItemContainerStyle>
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Width="36" Height="36" CornerRadius="10" Background="#1A38BDF8" Margin="0,0,12,0">
+                      <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons" FontSize="15"
+                                 Foreground="#7DD3FC" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="#E2E8F0" />
+                      <TextBlock Text="{Binding Subtitle}" FontSize="11" Opacity="0.7" Foreground="#CBD5E1" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Kind}" FontSize="10" Opacity="0.45" Foreground="#94A3B8"
+                               VerticalAlignment="Center" Margin="8,0,4,0" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Border>
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="4" Padding="20,8" BorderThickness="0,1,0,0" BorderBrush="#22FFFFFF" x:Name="StatusBar">
+          <Grid>
+            <TextBlock x:Name="StatusLeft" FontSize="11" Opacity="0.7" Foreground="#E2E8F0" />
+            <TextBlock x:Name="StatusRight" FontSize="11" Opacity="0.7" HorizontalAlignment="Right" Foreground="#E2E8F0" />
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

@@ -1,0 +1,66 @@
+<Window x:Class="CpuTempWidget.WelcomeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:CpuTempWidget.Controls"
+        Title="Pulse"
+        Width="460"
+        Height="420"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#0B1220"
+        ShowInTaskbar="True"
+        WindowStyle="SingleBorderWindow">
+  <Border x:Name="RootBorder" Padding="32" BorderBrush="#2A4060" BorderThickness="1">
+    <StackPanel>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+        <controls:PulseMark x:Name="LogoMark" Width="52" Height="30" Margin="0,0,14,0" />
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock Text="Welcome to Pulse"
+                     FontFamily="Segoe UI Variable Display, Segoe UI"
+                     FontSize="24"
+                     FontWeight="SemiBold"
+                     Foreground="#FFFFFF" />
+          <TextBlock Text="by MugoByte Technologies"
+                     FontFamily="Segoe UI Variable Small, Segoe UI"
+                     FontSize="12"
+                     Foreground="#94A3B8"
+                     Margin="0,4,0,0" />
+        </StackPanel>
+      </StackPanel>
+
+      <TextBlock FontFamily="Segoe UI Variable Small, Segoe UI"
+                 FontSize="13"
+                 Foreground="#B4C2D6"
+                 TextWrapping="Wrap"
+                 LineHeight="22"
+                 Margin="0,0,0,8"
+                 Text="Your premium system monitor overlay is now live on the desktop." />
+
+      <TextBlock FontFamily="Segoe UI Variable Small, Segoe UI"
+                 FontSize="13"
+                 Foreground="#B4C2D6"
+                 TextWrapping="Wrap"
+                 LineHeight="22"
+                 Margin="0,0,0,20"
+                 Text="• Right-click for the Pulse menu&#x0a;• Double-click to open the adjust panel&#x0a;• Drag to move when unlocked" />
+
+      <CheckBox x:Name="StartupCheckBox"
+                Content="Launch Pulse at Windows startup"
+                IsChecked="True"
+                Foreground="#E2E8F0"
+                FontFamily="Segoe UI Variable Small, Segoe UI"
+                FontSize="13"
+                Margin="0,0,0,24" />
+
+      <Button x:Name="GetStartedButton" Content="Open Pulse"
+              HorizontalAlignment="Right"
+              Padding="24,10"
+              Background="#1E81C1"
+              Foreground="#FFFFFF"
+              FontWeight="SemiBold"
+              FontSize="13"
+              BorderThickness="0"
+              Click="GetStartedButton_Click" />
+    </StackPanel>
+  </Border>
+</Window>

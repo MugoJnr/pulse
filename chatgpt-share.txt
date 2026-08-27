@@ -1,0 +1,1604 @@
+### ASSISTANT
+If Pulse is going to represent MugoByte Technologies, then the UI should feel like a 2026 premium Windows application, not a traditional system utility. Think of it as Raycast × Windows 11 × PowerToys × Arc Browser, with a strong focus on simplicity and speed.
+
+💙 Pulse
+by MugoByte Technologies
+
+The modern Windows command center.
+
+Overall Layout
+┌───────────────────────────────────────────────────────────────────────────┐
+│  💙 Pulse                                           ─ □ ✕                 │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  🔍 Search apps, settings, commands, processes...                         │
+│                                                                           │
+├───────────────────────────────────────────────────────────────────────────┤
+│ ⭐ Favorites   ⚡ Quick Actions   📊 Live Status   🕘 Recent               │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  ⚡ Performance      🖥 Hardware        🌐 Network                         │
+│                                                                           │
+│  🧹 Maintenance      📦 Applications   🔒 Security                        │
+│                                                                           │
+│  ⚙ Windows          🧰 Developer      💾 Storage                          │
+│                                                                           │
+├───────────────────────────────────────────────────────────────────────────┤
+│                            Dynamic Content Area                           │
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
+
+No traditional sidebar.
+
+Everything begins with Search.
+
+Floating Widget
+
+Runs independently.
+
+CPU 18%   52°C
+
+No border.
+
+No background.
+
+Transparent.
+
+Color changes automatically.
+
+Click it → Opens Pulse.
+
+Search
+
+The centerpiece.
+
+Large.
+
+Rounded.
+
+Beautiful.
+
+🔍 Search anything...
+
+Apps
+
+Windows Settings
+
+Control Panel
+
+Processes
+
+Services
+
+Files
+
+Commands
+
+Tools
+
+Drivers
+
+Live search.
+
+Fuzzy search.
+
+Instant.
+
+Typing:
+
+blu
+
+Immediately shows
+
+Bluetooth
+
+Bluetooth Devices
+
+Bluetooth Driver
+
+Nearby Sharing
+
+Bluetooth Services
+
+Turn Bluetooth Off
+
+Home Dashboard
+
+Instead of boring graphs...
+
+Beautiful cards.
+
+CPU
+
+18%
+
+52°C
+RAM
+
+7.4 / 16GB
+GPU
+
+41°C
+Storage
+
+81%
+Battery
+
+92%
+Network
+
+42 Mbps
+
+Rounded.
+
+Minimal.
+
+Quick Actions
+
+Large cards.
+
+⚡ Best Performance
+
+🌙 Dark Mode
+
+☀ Light Mode
+
+🧹 Cleanup
+
+🛡 Defender
+
+🌐 Wi-Fi
+
+📡 Bluetooth
+
+🔄 Restart Explorer
+
+📋 Task Manager
+
+⚙ Device Manager
+Performance Section
+
+Contains
+
+CPU
+
+GPU
+
+RAM
+
+Storage
+
+Battery
+
+Power Plans
+
+Cooling
+
+Fans
+
+Processes
+
+Startup Apps
+
+Performance Mode
+
+Ultimate Performance
+
+Balanced
+
+Battery Saver
+
+Hardware Section
+
+Motherboard
+
+CPU
+
+GPU
+
+RAM
+
+Storage
+
+Battery
+
+Network
+
+Temperatures
+
+Voltages
+
+Fan Speeds
+
+SMART Health
+
+Maintenance
+
+Disk Cleanup
+
+Clear Temp
+
+Recycle Bin
+
+Storage Sense
+
+DNS Flush
+
+Repair Windows
+
+SFC
+
+DISM
+
+Restart Explorer
+
+Windows Update
+
+Health Report
+
+Network
+
+Wi-Fi
+
+Ethernet
+
+VPN
+
+Bluetooth
+
+DNS
+
+IP Address
+
+Speed Test
+
+Adapter Reset
+
+Internet Diagnostics
+
+Firewall
+
+Security
+
+Windows Defender
+
+Firewall
+
+BitLocker
+
+Credential Manager
+
+Windows Security
+
+Restore Point
+
+Recovery
+
+Encryption
+
+Applications
+
+Installed Apps
+
+Running Apps
+
+Startup Apps
+
+Kill Process
+
+Kill Process Tree
+
+Launch Applications
+
+Recent Apps
+
+Pinned Apps
+
+Windows
+
+Device Manager
+
+Services
+
+Registry
+
+Group Policy
+
+Control Panel
+
+Event Viewer
+
+Computer Management
+
+Task Scheduler
+
+Performance Monitor
+
+Resource Monitor
+
+Disk Management
+
+System Information
+
+Environment Variables
+
+Windows Terminal
+
+PowerShell
+
+Command Prompt
+
+Storage
+
+Drive Health
+
+SMART Status
+
+Temperatures
+
+Partitions
+
+Usage
+
+Optimize
+
+Cleanup
+
+USB Devices
+
+Developer
+
+Terminal
+
+PowerShell
+
+Git
+
+Python
+
+Node
+
+Docker
+
+WSL
+
+Environment Variables
+
+Hosts File
+
+Ports
+
+Running Services
+
+Settings
+
+General
+
+Appearance
+
+Theme
+
+Accent Color
+
+Widget
+
+Notifications
+
+Performance
+
+Startup
+
+Updates
+
+Privacy
+
+Advanced
+
+About
+
+Themes
+
+Light
+
+Dark
+
+System
+
+Midnight
+
+OLED Black
+
+Glass
+
+Mica
+
+Acrylic
+
+Accent Colors
+
+Blue (Default)
+
+Purple
+
+Green
+
+Orange
+
+Red
+
+Pink
+
+Teal
+
+Custom
+
+Widget Customization
+
+Font
+
+Opacity
+
+Scale
+
+Position
+
+Always On Top
+
+Lock Position
+
+Refresh Rate
+
+Color Rules
+
+Compact Mode
+
+Click Through
+
+Process Manager
+
+Beautiful table
+
+Application
+
+CPU
+
+RAM
+
+GPU
+
+Status
+
+PID
+
+Buttons
+
+Open
+
+Suspend
+
+Resume
+
+Restart
+
+End
+
+Kill Tree
+
+Force Close
+
+Smart Notifications
+
+Instead of annoying popups
+
+Elegant Fluent toasts.
+
+Examples
+
+🔥 CPU Temperature High
+
+⚠ Memory Almost Full
+
+💾 Storage Running Low
+
+🔋 Battery Fully Charged
+
+🌐 Internet Lost
+
+Recent Activity
+
+Shows
+
+Recently opened apps
+
+Recent settings
+
+Recent commands
+
+Recent searches
+
+Recent maintenance
+
+Favorites
+
+Pin absolutely anything.
+
+Settings.
+
+Apps.
+
+Processes.
+
+Commands.
+
+Folders.
+
+Files.
+
+Control Panel.
+
+PowerShell scripts.
+
+Search Intelligence
+
+Pulse should understand natural language:
+
+"dark mode"
+
+"turn on bluetooth"
+
+"restart explorer"
+
+"clear temp"
+
+"close chrome"
+
+"battery report"
+
+"performance mode"
+
+"gpu"
+
+"windows update"
+
+"device manager"
+
+"network reset"
+
+Even with typos.
+
+Animations
+
+Very subtle.
+
+Hover
+
+Fade
+
+Scale
+
+Slide
+
+Ripple
+
+Blur
+
+Nothing excessive.
+
+Everything at 60 FPS.
+
+Design Language
+
+Use Microsoft's Fluent 2 Design System as the foundation:
+
+Fluent 2 controls and spacing
+
+Mica background where supported
+
+Acrylic overlays for dialogs and menus
+
+Fluent System Icons
+
+Segoe UI Variable typography
+
+16–20px rounded corners
+
+Soft shadows and elevation
+
+Consistent 8px spacing grid
+
+Smooth transitions (150–250 ms)
+
+Enhance it with a premium MugoByte identity:
+
+Blue gradient accent (#2563EB → #3B82F6)
+
+Elegant glass effects
+
+High-contrast accessibility
+
+Responsive layout that scales cleanly from compact laptops to ultrawide monitors
+
+Keyboard-first navigation with shortcuts for every major action
+
+The Experience
+
+The goal is that someone opens Pulse and immediately thinks:
+
+"This feels like it should have shipped with Windows."
+
+Not a cluttered toolbox, but a polished, unified command center where monitoring, search, diagnostics, maintenance, and system controls all feel like parts of one thoughtfully designed product under the MugoByte Technologies brand.
+
+---
+
+### USER
+use premium icons instead of emojis
+
+---
+
+### ASSISTANT
+I completely agree. For a premium desktop application, emojis would make Pulse look amateurish. The UI should use a professional icon library throughout.
+
+Recommended Icon Set (Primary)
+Microsoft Fluent System Icons ⭐⭐⭐⭐⭐ (Recommended)
+
+This is the same icon language used across modern Windows and Microsoft 365.
+
+Advantages:
+
+Native Windows aesthetic
+
+Supports Light/Dark mode
+
+Filled and Regular variants
+
+Thousands of icons
+
+Consistent stroke widths
+
+Beautiful at 16px, 20px, 24px and 32px
+
+Secondary
+
+If an icon is unavailable, use:
+
+Material Symbols
+
+Phosphor Icons
+
+Lucide Icons
+
+But keep Fluent Icons as the primary design language.
+
+Updated Navigation
+
+Instead of
+
+⚡ Performance
+🖥 Hardware
+🌐 Network
+
+Use
+
+Performance      (Speedometer Icon)
+Hardware         (CPU Chip Icon)
+Network          (Network Globe Icon)
+Maintenance      (Broom Icon)
+Applications     (Grid Apps Icon)
+Windows          (Windows Logo Icon)
+Security         (Shield Icon)
+Storage          (Hard Drive Icon)
+Developer        (Code Icon)
+Settings         (Settings Gear Icon)
+Dashboard Cards
+
+Instead of
+
+🔥 CPU
+
+Use
+
+[CPU Chip Icon]
+CPU
+18%
+52°C
+[Memory Icon]
+RAM
+7.2GB
+[Hard Drive Icon]
+Storage
+[Battery Icon]
+Battery
+[Wi-Fi Icon]
+Network
+Search Bar
+
+Instead of
+
+🔍 Search...
+
+Use
+
+[Search Icon]
+
+Search apps, settings, commands...
+Quick Actions
+
+Instead of emojis
+
+Use Fluent Icons:
+
+Action	Icon
+Best Performance	Speedometer
+Power Saver	Leaf
+Dark Mode	Moon
+Light Mode	Sun
+Restart Explorer	Arrow Sync
+Task Manager	Window Task List
+Device Manager	Devices
+Windows Update	Arrow Clockwise
+Disk Cleanup	Broom
+Defender	Shield Checkmark
+Bluetooth	Bluetooth
+Wi-Fi	Wi-Fi
+VPN	Globe Lock
+Registry	Database
+Services	Wrench
+PowerShell	Terminal
+CMD	Command Prompt
+Event Viewer	Clipboard Data
+Resource Monitor	Pulse
+Performance Monitor	Chart
+Control Panel	Grid
+Environment Variables	Branch
+Restore Point	History
+Buttons
+
+Every button should contain:
+
+[Icon] Label
+
+Examples
+
+[Moon] Dark Mode
+[Speedometer] Ultimate Performance
+[Broom] Disk Cleanup
+[Sync] Restart Explorer
+[Power] Shutdown
+Sidebar / Categories
+
+Every category has a premium icon.
+
+CPU Chip        Hardware
+
+Speedometer     Performance
+
+Hard Drive      Storage
+
+Shield          Security
+
+Network         Network
+
+Apps            Applications
+
+Windows Logo    Windows
+
+Code            Developer
+
+Settings        Settings
+Widget
+
+Even the widget can include a subtle icon.
+
+[CPU Chip]
+
+CPU 18%   52°C
+
+or
+
+[Pulse]
+
+18%   52°C
+
+Very subtle.
+
+Context Menus
+
+Every menu item should have an icon.
+
+CPU Chip     Open Hardware
+
+Moon         Dark Mode
+
+Sun          Light Mode
+
+Speedometer  Performance
+
+Power        Exit
+Overall Design Language
+
+Pulse should follow a consistent visual system:
+
+Microsoft Fluent 2 components
+
+Fluent System Icons throughout
+
+Segoe UI Variable typography
+
+Mica and Acrylic materials where appropriate
+
+Rounded corners (16–20px)
+
+Soft shadows and elevation
+
+Smooth micro-animations (150–250ms)
+
+No emojis anywhere in the UI
+
+Consistent icon sizing (20px in navigation, 16px in menus, 24–32px on cards)
+
+This will give Pulse by MugoByte Technologies the look and feel of a polished, first-party Windows application rather than a typical third-party utility.
+
+---
+
+### USER
+list everything that will be availabe .. full check list.. dont leave anything out
+
+---
+
+### ASSISTANT
+Pulse by MugoByte Technologies
+Complete Feature Checklist (v1.0 Master Specification)
+
+This checklist is intended to define everything Pulse should include in its first major release while keeping it as one cohesive application rather than multiple tools.
+
+1. Floating Overlay Widget
+Appearance
+
+☐ Frameless window
+
+☐ Borderless
+
+☐ Transparent background
+
+☐ No title bar
+
+☐ Always on top
+
+☐ Click-through mode (optional)
+
+☐ Compact horizontal layout
+
+☐ Adjustable font size
+
+☐ Adjustable opacity
+
+☐ Fluent typography
+
+☐ Premium Fluent icons
+
+☐ High DPI support
+
+☐ Multi-monitor support
+
+☐ Remember position
+
+☐ Lock position
+
+☐ Drag anywhere
+
+Live Monitoring
+CPU
+
+☐ CPU Usage %
+
+☐ CPU Temperature
+
+☐ CPU Clock Speed
+
+☐ CPU Load History
+
+☐ Core Count
+
+☐ Thread Count
+
+GPU
+
+☐ GPU Usage
+
+☐ GPU Temperature
+
+☐ GPU Memory Usage
+
+☐ GPU Clock
+
+Memory
+
+☐ RAM Usage
+
+☐ RAM Used
+
+☐ RAM Available
+
+☐ RAM Speed
+
+Storage
+
+☐ Disk Usage
+
+☐ Disk Read Speed
+
+☐ Disk Write Speed
+
+☐ Disk Temperature (SMART)
+
+☐ SMART Health
+
+Battery
+
+☐ Battery Percentage
+
+☐ Charging Status
+
+☐ Battery Health
+
+☐ Battery Cycle Count (if available)
+
+☐ Remaining Time
+
+☐ Charging Power (where exposed)
+
+Network
+
+☐ Upload Speed
+
+☐ Download Speed
+
+☐ Connection Status
+
+☐ Public IP
+
+☐ Local IP
+
+System
+
+☐ Uptime
+
+☐ System Load
+
+☐ Fan Speeds (if available)
+
+2. Search Engine
+
+Universal search.
+
+Searches:
+
+☐ Windows Settings
+
+☐ Control Panel
+
+☐ Installed Apps
+
+☐ Running Apps
+
+☐ Windows Tools
+
+☐ MMC Consoles
+
+☐ Files
+
+☐ Folders
+
+☐ Executables
+
+☐ Registry Tools
+
+☐ Services
+
+☐ Drivers
+
+☐ PowerShell Commands
+
+☐ CMD Commands
+
+☐ Favorites
+
+☐ Recent Items
+
+Supports
+
+☐ Fuzzy Search
+
+☐ Typo Correction
+
+☐ Search History
+
+☐ Recent Searches
+
+☐ Keyboard Navigation
+
+☐ Instant Results
+
+3. Dashboard
+
+Widgets
+
+☐ CPU
+
+☐ GPU
+
+☐ RAM
+
+☐ Storage
+
+☐ Battery
+
+☐ Network
+
+Cards
+
+☐ Quick Status
+
+☐ Health Score
+
+☐ Running Processes
+
+☐ Startup Apps
+
+☐ Recent Activity
+
+4. Performance
+
+Power Plans
+
+☐ Ultimate Performance
+
+☐ High Performance
+
+☐ Balanced
+
+☐ Power Saver
+
+Controls
+
+☐ Fast Startup
+
+☐ Hibernation
+
+☐ Sleep Settings
+
+☐ Display Timeout
+
+☐ Battery Saver
+
+☐ Performance Mode
+
+☐ Startup Apps
+
+Monitoring
+
+☐ Resource Monitor
+
+☐ Performance Monitor
+
+☐ CPU Graph
+
+☐ RAM Graph
+
+☐ GPU Graph
+
+5. Hardware
+
+CPU
+
+GPU
+
+Motherboard
+
+RAM
+
+Storage
+
+Battery
+
+Network Adapter
+
+BIOS
+
+Sensors
+
+Fan Speeds
+
+Temperatures
+
+Voltages
+
+Device Information
+
+Driver Versions
+
+6. Applications
+
+Installed Apps
+
+Running Apps
+
+Recent Apps
+
+Pinned Apps
+
+Launch Apps
+
+Kill App
+
+Kill Process Tree
+
+Restart App
+
+Open File Location
+
+Uninstall App
+
+Repair App
+
+Reset App
+
+Startup Apps
+
+7. Process Manager
+
+Running Processes
+
+CPU Usage
+
+RAM Usage
+
+GPU Usage
+
+Disk Usage
+
+Network Usage
+
+PID
+
+Threads
+
+Priority
+
+Suspend
+
+Resume
+
+Restart
+
+End Task
+
+Kill Tree
+
+Force Close User Apps
+
+Restart Explorer
+
+8. Maintenance
+
+Disk Cleanup
+
+Storage Sense
+
+Clear Temp
+
+Clear Windows Temp
+
+Clear Prefetch
+
+Flush DNS
+
+Clear Clipboard
+
+Clear Thumbnail Cache
+
+Clear Icon Cache
+
+Recycle Bin
+
+Optimize Drives
+
+Check Disk
+
+SFC Scan
+
+DISM Scan
+
+Health Check
+
+Windows Update
+
+Restart Explorer
+
+Create Restore Point
+
+9. Network
+
+Wi-Fi
+
+Bluetooth
+
+VPN
+
+Ethernet
+
+DNS
+
+Firewall
+
+Network Reset
+
+Release IP
+
+Renew IP
+
+Flush DNS
+
+Internet Diagnostics
+
+Speed Test
+
+Hotspot
+
+Nearby Sharing
+
+Proxy
+
+Adapter Settings
+
+10. Security
+
+Windows Security
+
+Defender
+
+Firewall
+
+BitLocker
+
+Credential Manager
+
+User Accounts
+
+UAC
+
+Windows Hello
+
+Encryption
+
+Recovery
+
+Restore Point
+
+Backup
+
+Safe Mode
+
+11. Windows
+
+Settings
+
+Control Panel
+
+Task Manager
+
+Device Manager
+
+Disk Management
+
+Computer Management
+
+Services
+
+Registry Editor
+
+Group Policy
+
+Performance Monitor
+
+Resource Monitor
+
+Task Scheduler
+
+System Information
+
+Environment Variables
+
+Programs & Features
+
+Event Viewer
+
+Reliability Monitor
+
+Windows Update
+
+Recovery
+
+Optional Features
+
+Startup Apps
+
+12. Storage
+
+Drive Health
+
+SMART
+
+Temperatures
+
+Partitions
+
+Usage
+
+Optimization
+
+Cleanup
+
+USB Devices
+
+Mount Points
+
+Drive Letters
+
+13. Battery
+
+Battery Health
+
+Battery Report
+
+Charging Status
+
+Cycle Count
+
+Charging Speed
+
+Power Usage
+
+Battery Saver
+
+OEM Battery Utility Shortcut (where supported)
+
+14. Developer
+
+Terminal
+
+PowerShell
+
+CMD
+
+Git
+
+Python
+
+Node
+
+Docker
+
+WSL
+
+Environment Variables
+
+Hosts File
+
+Open Ports
+
+Running Services
+
+15. Notifications
+
+CPU Hot
+
+GPU Hot
+
+RAM High
+
+Storage Full
+
+Battery Low
+
+Battery Charged
+
+Network Lost
+
+Updates Available
+
+SMART Warning
+
+Fan Failure (if detectable)
+
+16. Themes
+
+Light
+
+Dark
+
+System
+
+OLED Black
+
+Glass
+
+Mica
+
+Acrylic
+
+Custom Accent
+
+17. Widget Settings
+
+Opacity
+
+Font
+
+Scale
+
+Refresh Rate
+
+Position
+
+Lock Position
+
+Click Through
+
+Always On Top
+
+Compact Mode
+
+Color Rules
+
+Animation Toggle
+
+18. Favorites
+
+Pin Anything
+
+Apps
+
+Commands
+
+Settings
+
+Control Panel
+
+Folders
+
+Files
+
+PowerShell Scripts
+
+19. Recent
+
+Recent Searches
+
+Recent Commands
+
+Recent Apps
+
+Recent Settings
+
+Recent Maintenance
+
+20. Keyboard Shortcuts
+
+Open Pulse
+
+Open Search
+
+Launch Widget
+
+Hide Widget
+
+Toggle Theme
+
+Restart Explorer
+
+Quick Cleanup
+
+Task Manager
+
+Custom Shortcuts
+
+21. UI / UX
+
+☐ Microsoft Fluent 2 Design
+
+☐ Fluent System Icons only
+
+☐ Mica material
+
+☐ Acrylic dialogs
+
+☐ Rounded corners
+
+☐ Consistent spacing
+
+☐ Responsive layout
+
+☐ Keyboard-first navigation
+
+☐ Smooth micro-animations
+
+☐ Accessible color contrast
+
+☐ High DPI support
+
+☐ Touch-friendly controls
+
+☐ Multi-monitor awareness
+
+☐ Native Windows context menus where appropriate
+
+☐ Consistent loading, empty, and error states
+
+22. Smart Search Coverage
+
+Pulse should be able to locate and launch virtually every commonly used Windows destination, including:
+
+Settings pages
+
+Control Panel applets
+
+MMC snap-ins
+
+Administrative tools
+
+Installed applications
+
+Microsoft Store apps
+
+Windows features
+
+Startup folders
+
+Services
+
+Device categories
+
+Common command-line tools
+
+System folders
+
+User folders
+
+Network utilities
+
+Recovery tools
+
+Accessibility features
+
+Power management options
+
+23. Core Principles
+
+☐ Lightweight (<50 MB RAM target under normal use)
+
+☐ Low CPU overhead (<1% while idle)
+
+☐ Native Windows experience
+
+☐ Fast startup
+
+☐ Reliable hardware monitoring
+
+☐ Safe defaults for advanced operations
+
+☐ Search-first workflow
+
+☐ Fully keyboard navigable
+
+☐ Modern Fluent UI
+
+☐ Consistent MugoByte Technologies branding
+
+☐ Modular architecture for future expansion
+
+☐ Robust error handling and graceful fallbacks
+
+☐ User confirmations for destructive actions (e.g., force-closing applications, clearing caches, or running repair commands)
+
+This specification gives Pulse the scope of a polished Windows command center while keeping the application cohesive, performant, and safe to use. Features that can disrupt the system are intentionally designed with confirmation prompts and sensible safeguards rather than one-click execution.

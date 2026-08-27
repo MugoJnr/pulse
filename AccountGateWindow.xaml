@@ -1,0 +1,137 @@
+<Window x:Class="CpuTempWidget.AccountGateWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:CpuTempWidget.Controls"
+        Title="Pulse — Activation Required"
+        Width="520"
+        Height="700"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#0B1220"
+        ShowInTaskbar="True">
+  <Border Padding="0" BorderBrush="#2A4060" BorderThickness="1">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+
+      <!-- Top actions (POS-style Step 3 / primary activate) -->
+      <Border Grid.Row="0" Background="#111827" BorderBrush="#F2A800" BorderThickness="0,0,0,2" Padding="20,16">
+        <StackPanel>
+          <TextBlock Text="ACTIVATE"
+                     Foreground="#F2A800" FontSize="11" FontWeight="Bold"
+                     FontFamily="Segoe UI Variable Small, Segoe UI" Margin="0,0,0,10"/>
+          <Button x:Name="ActivateKeyButton" Content="Activate License"
+                  Height="44" Margin="0,0,0,8"
+                  Background="#F2A800" Foreground="#0A0F18" BorderThickness="0"
+                  FontWeight="Bold" FontSize="14" Click="ActivateKeyButton_Click"
+                  ToolTip="Paste an online MBT-… key below, then activate"/>
+          <Button x:Name="ExitButton" Content="Exit Application"
+                  Height="40" Background="#1E293B" Foreground="#E2E8F0" BorderThickness="0"
+                  Click="ExitButton_Click"/>
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,16,24,8">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+            <controls:PulseMark Width="52" Height="30" Margin="0,0,14,0"/>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="MUGOBYTE TECHNOLOGIES"
+                         FontSize="10" Foreground="#6880A0" FontWeight="SemiBold"
+                         FontFamily="Segoe UI Variable Small, Segoe UI"/>
+              <TextBlock x:Name="TitleText" Text="Software Activation"
+                         FontFamily="Segoe UI Variable Display, Segoe UI"
+                         FontSize="22" FontWeight="SemiBold" Foreground="#F2A800" Margin="0,2,0,0"/>
+              <TextBlock Text="Activate this computer to use Pulse."
+                         FontSize="12" Foreground="#94A3B8" Margin="0,2,0,0"/>
+            </StackPanel>
+          </StackPanel>
+
+          <TextBlock x:Name="ModeHint" TextWrapping="Wrap" Margin="0,0,0,16"
+                     FontFamily="Segoe UI Variable Small, Segoe UI" FontSize="12.5"
+                     Foreground="#B4C2D6"
+                     Text="Same onboarding as MBT POS: sign in and this device is licensed automatically from your account. A license key is only needed if no seat is available."/>
+
+          <!-- Step 1 — Sign in -->
+          <TextBlock Text="Step 1 — Sign in to MugoByte" Foreground="#E2E8F0"
+                     FontSize="12" FontWeight="Bold" Margin="0,0,0,8"/>
+          <Border Background="#111827" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,14">
+            <StackPanel>
+              <TextBlock TextWrapping="Wrap" Foreground="#94A3B8" FontSize="11.5" Margin="0,0,0,10"
+                         Text="Sign in and this device is licensed automatically from your account. No key needed if a seat is available."/>
+
+              <TextBlock Text="Business email" Foreground="#94A3B8" FontSize="12" Margin="0,0,0,6"/>
+              <TextBox x:Name="EmailBox" Height="36" Padding="10,8" Margin="0,0,0,10"
+                       Background="#0C1626" Foreground="#F8FAFC" BorderBrush="#334155"
+                       FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="14"/>
+
+              <TextBlock Text="Password" Foreground="#94A3B8" FontSize="12" Margin="0,0,0,6"/>
+              <PasswordBox x:Name="PasswordBox" Height="36" Padding="10,8" Margin="0,0,0,8"
+                           Background="#0C1626" Foreground="#F8FAFC" BorderBrush="#334155"
+                           FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="14"/>
+
+              <TextBlock x:Name="NameLabel" Text="Full name (create account)" Foreground="#94A3B8"
+                         FontSize="12" Margin="0,4,0,6" Visibility="Collapsed"/>
+              <TextBox x:Name="NameBox" Height="36" Padding="10,8" Margin="0,0,0,10"
+                       Background="#0C1626" Foreground="#F8FAFC" BorderBrush="#334155"
+                       Visibility="Collapsed"/>
+
+              <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                <Button x:Name="PrimaryButton" Content="Sign In &amp; Activate" Padding="18,10"
+                        Background="#F2A800" Foreground="#0A0F18" BorderThickness="0"
+                        FontWeight="Bold" Click="PrimaryButton_Click"/>
+                <Button x:Name="ToggleModeButton" Content="Create account" Padding="14,10" Margin="10,0,0,0"
+                        Background="#1E293B" Foreground="#E2E8F0" BorderThickness="0"
+                        Click="ToggleModeButton_Click"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- Manual key fallback -->
+          <TextBlock Text="Or paste your online license key" Foreground="#E2E8F0"
+                     FontSize="12" FontWeight="Bold" Margin="0,4,0,6"/>
+          <TextBlock TextWrapping="Wrap" Foreground="#94A3B8" FontSize="11.5" Margin="0,0,0,8"
+                     Text="Get an MBT-… key from portal.mugobyte.com → Licenses. Local/offline keygen keys are not accepted."/>
+
+          <TextBlock Text="Your Hardware ID" Foreground="#E2E8F0"
+                     FontSize="12" FontWeight="Bold" Margin="0,4,0,6"/>
+          <Border Background="#111827" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,12">
+            <StackPanel>
+              <TextBlock TextWrapping="Wrap" Foreground="#94A3B8" FontSize="11.5" Margin="0,0,0,8"
+                         Text="Shown for support. Activation uses your Portal account or online MBT-… key."/>
+              <TextBox x:Name="HardwareIdBox" IsReadOnly="True" Height="36" Padding="10,8" Margin="0,0,0,8"
+                       Background="#0C1626" Foreground="#F2A800" BorderBrush="#334155"
+                       FontFamily="Cascadia Mono, Consolas, Courier New" FontSize="12"/>
+              <Button Content="Copy Hardware ID" Padding="12,8" HorizontalAlignment="Left"
+                      Background="#1E293B" Foreground="#E2E8F0" BorderThickness="0"
+                      Click="CopyHardwareId_Click"/>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Text="Step 2 — Activation Key" Foreground="#E2E8F0"
+                     FontSize="12" FontWeight="Bold" Margin="0,4,0,6"/>
+          <TextBox x:Name="LicenseKeyBox" Height="40" Padding="10,8" Margin="0,0,0,12"
+                   Background="#0C1626" Foreground="#F8FAFC" BorderBrush="#334155"
+                    FontFamily="Cascadia Mono, Consolas, Courier New" FontSize="13"
+                   ToolTip="MBT-… online key from portal.mugobyte.com"/>
+
+          <TextBlock x:Name="StatusText" TextWrapping="Wrap" Margin="0,0,0,8"
+                     FontFamily="Segoe UI Variable Small, Segoe UI" FontSize="12.5"
+                     Foreground="#F59E0B"/>
+
+          <Border x:Name="MockHintPanel" Margin="0,8,0,0" Padding="12" CornerRadius="10"
+                  Background="#0F172A" BorderBrush="#1E293B" BorderThickness="1" Visibility="Collapsed">
+            <TextBlock TextWrapping="Wrap" Foreground="#93C5FD" FontSize="12"
+                       Text="Mock portal mode (--mock-account / MBT_PLATFORM_MODE=mock): use Sign In &amp; Activate with any email and an 8+ character password. The mock seat is claimed automatically — same process as live POS."/>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <TextBlock Grid.Row="2" Margin="24,8,24,16" Foreground="#64748B" FontSize="11"
+                 Text="Tokens are stored with Windows DPAPI. Passwords are never written to disk. Offline grace matches MBT POS (7 days by default)."/>
+    </Grid>
+  </Border>
+</Window>

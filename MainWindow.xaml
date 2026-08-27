@@ -1,0 +1,269 @@
+<Window x:Class="CpuTempWidget.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Pulse"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True">
+  <Window.Resources>
+    <DropShadowEffect x:Key="TextOutline" BlurRadius="2.2" ShadowDepth="0" Color="#000000" Opacity="0.82" />
+
+    <Style x:Key="IconStyle" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Width" Value="16" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,6,0" />
+      <Setter Property="Opacity" Value="0.95" />
+      <Setter Property="Effect" Value="{StaticResource TextOutline}" />
+    </Style>
+
+    <Style x:Key="ValueStyle" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Small, Consolas, Segoe UI" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="#E2E8F0" />
+      <Setter Property="Effect" Value="{StaticResource TextOutline}" />
+    </Style>
+
+    <Style x:Key="MetricCell" TargetType="StackPanel">
+      <Setter Property="Orientation" Value="Horizontal" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Margin" Value="0,0,16,0" />
+    </Style>
+
+    <Style x:Key="SliderLabelStyle" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Small, Segoe UI" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="#E2E8F0" />
+      <Setter Property="Width" Value="58" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="SliderValueStyle" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Small, Segoe UI" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="#CBD5E1" />
+      <Setter Property="Width" Value="50" />
+      <Setter Property="TextAlignment" Value="Right" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+    </Style>
+
+    <Style x:Key="AdjustSliderStyle" TargetType="Slider">
+      <Setter Property="Width" Value="160" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="IsSnapToTickEnabled" Value="False" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <Style x:Key="DarkComboBoxItem" TargetType="ComboBoxItem">
+      <Setter Property="Foreground" Value="#CBD5E1" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="8,5" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBoxItem">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                    SnapsToDevicePixels="True">
+              <ContentPresenter />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsHighlighted" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#1A2563EB" />
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#332563EB" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="DarkComboBox" TargetType="ComboBox">
+      <Setter Property="Foreground" Value="#CBD5E1" />
+      <Setter Property="Background" Value="#1A1E2E" />
+      <Setter Property="BorderBrush" Value="#33FFFFFF" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBox">
+            <Grid>
+              <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                      CornerRadius="4" Padding="{TemplateBinding Padding}">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
+                                    ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                    VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0" />
+                  <ToggleButton Grid.Column="1" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                Background="Transparent" BorderThickness="0" Width="18" Cursor="Hand">
+                    <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="8" Foreground="#CBD5E1"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </ToggleButton>
+                </Grid>
+              </Border>
+              <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                     AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                <Border x:Name="DropDownBorder" Background="#1A1E2E" BorderBrush="#33FFFFFF"
+                        BorderThickness="1" CornerRadius="6" Padding="0,4" MinWidth="{TemplateBinding ActualWidth}"
+                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                  </ScrollViewer>
+                </Border>
+              </Popup>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="BorderBrush" Value="#55FFFFFF" />
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DarkToggleButton" TargetType="ToggleButton">
+      <Setter Property="Foreground" Value="#CBD5E1" />
+      <Setter Property="Background" Value="#1A1E2E" />
+      <Setter Property="BorderBrush" Value="#33FFFFFF" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="0,4,4,0">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="DarkPopupBorder" TargetType="Border">
+      <Setter Property="Background" Value="#1A1E2E" />
+      <Setter Property="BorderBrush" Value="#33FFFFFF" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="0,4" />
+    </Style>
+  </Window.Resources>
+
+  <Grid>
+    <Border x:Name="RootBorder"
+            Padding="0"
+            Background="Transparent"
+            MouseLeftButtonDown="Border_MouseLeftButtonDown"
+            MouseLeftButtonUp="Border_MouseLeftButtonUp"
+            MouseRightButtonUp="Border_MouseRightButtonUp"
+            Opacity="0.96">
+      <StackPanel>
+        <Border x:Name="HudPlate" CornerRadius="18" Padding="14,8" Background="#3A020612">
+          <Grid x:Name="ContentRoot">
+            <StackPanel x:Name="CpuCell" Style="{StaticResource MetricCell}">
+              <TextBlock x:Name="CpuIcon" Style="{StaticResource IconStyle}" Text="&#xE950;" ToolTip="CPU" />
+              <TextBlock x:Name="CpuValue" Style="{StaticResource ValueStyle}" Text="--%" />
+            </StackPanel>
+            <StackPanel x:Name="TempCell" Style="{StaticResource MetricCell}">
+              <TextBlock x:Name="TempIcon" Style="{StaticResource IconStyle}" Text="&#xE9CA;" ToolTip="Temperature" />
+              <TextBlock x:Name="TempValue" Style="{StaticResource ValueStyle}" Text="--°" />
+            </StackPanel>
+            <StackPanel x:Name="RamCell" Style="{StaticResource MetricCell}">
+              <TextBlock x:Name="RamIcon" Style="{StaticResource IconStyle}" Text="&#xE8C8;" ToolTip="Memory" />
+              <TextBlock x:Name="RamValue" Style="{StaticResource ValueStyle}" Text="--%" />
+            </StackPanel>
+            <StackPanel x:Name="BatteryCell" Style="{StaticResource MetricCell}">
+              <TextBlock x:Name="BatteryIcon" Style="{StaticResource IconStyle}" Text="&#xE83F;" ToolTip="Battery" />
+              <TextBlock x:Name="BatteryValue" Style="{StaticResource ValueStyle}" Text="--" />
+            </StackPanel>
+            <StackPanel x:Name="WattsCell" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+              <TextBlock x:Name="ChargeWatts"
+                         Style="{StaticResource ValueStyle}"
+                         FontSize="11"
+                         Opacity="0.88"
+                         Visibility="Collapsed"
+                         ToolTip="Charge rate"
+                         Text="" />
+            </StackPanel>
+            <StackPanel x:Name="FanCell" Style="{StaticResource MetricCell}" Visibility="Collapsed">
+              <TextBlock x:Name="FanIcon" Style="{StaticResource IconStyle}" Text="&#xE7F4;" ToolTip="Fan" />
+              <TextBlock x:Name="FanValue" Style="{StaticResource ValueStyle}" Text="--" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <Border x:Name="AdjustPanel"
+                Margin="0,8,0,0"
+                Padding="10,10"
+                CornerRadius="10"
+                Visibility="Collapsed"
+                MouseEnter="AdjustPanel_MouseActivity"
+                MouseMove="AdjustPanel_MouseActivity"
+                PreviewMouseDown="AdjustPanel_MouseActivity"
+                PreviewMouseWheel="AdjustPanel_PreviewMouseWheel">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+              <TextBlock x:Name="SizeLabel" Style="{StaticResource SliderLabelStyle}" Text="Size" />
+              <Slider x:Name="SizeSlider" Style="{StaticResource AdjustSliderStyle}"
+                      Minimum="11" Maximum="32" TickFrequency="0.5" IsSnapToTickEnabled="True"
+                      IsMoveToPointEnabled="True" ValueChanged="SizeSlider_ValueChanged" />
+              <TextBlock x:Name="SizeValueText" Style="{StaticResource SliderValueStyle}" Text="13" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <TextBlock x:Name="OpacityLabel" Style="{StaticResource SliderLabelStyle}" Text="Opacity" />
+              <Slider x:Name="OpacitySlider" Style="{StaticResource AdjustSliderStyle}"
+                      Minimum="0.35" Maximum="1.0" TickFrequency="0.01" IsSnapToTickEnabled="True"
+                      IsMoveToPointEnabled="True" ValueChanged="OpacitySlider_ValueChanged" />
+              <TextBlock x:Name="OpacityValueText" Style="{StaticResource SliderValueStyle}" Text="95%" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+              <TextBlock x:Name="LayoutLabel" Style="{StaticResource SliderLabelStyle}" Text="Layout" />
+              <ComboBox x:Name="LayoutCombo" Width="168" FontSize="11"
+                        Style="{StaticResource DarkComboBox}"
+                        ItemContainerStyle="{StaticResource DarkComboBoxItem}"
+                        SelectionChanged="LayoutCombo_Changed">
+                <ComboBoxItem Tag="Strip" Content="Strip — one row" />
+                <ComboBoxItem Tag="Quad" Content="Quad — 2×2, watts center" />
+                <ComboBoxItem Tag="Stack" Content="Stack — vertical" />
+                <ComboBoxItem Tag="Focus" Content="Focus — large CPU / temp" />
+              </ComboBox>
+            </StackPanel>
+            <TextBlock x:Name="AdjustHint" Margin="0,8,0,0"
+                       FontFamily="Segoe UI Variable Small, Segoe UI" FontSize="10" Foreground="#94A3B8"
+                       Text="Panel auto-hides after 5s · double-click overlay to toggle" />
+            <CheckBox x:Name="AutoHideCheckBox" Margin="0,8,0,0" Content="Auto-hide settings"
+                      IsChecked="True" FontFamily="Segoe UI Variable Small, Segoe UI" FontSize="11"
+                      Foreground="#CBD5E1" Checked="AutoHideCheckBox_Changed" Unchecked="AutoHideCheckBox_Changed" />
+            <CheckBox x:Name="AdaptiveCheckBox" Margin="0,6,0,0" Content="Adapt to wallpaper / games"
+                      IsChecked="True" FontFamily="Segoe UI Variable Small, Segoe UI" FontSize="11"
+                      Foreground="#CBD5E1" Checked="AdaptiveCheckBox_Changed" Unchecked="AdaptiveCheckBox_Changed" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Border>
+
+    <Popup x:Name="MenuPopup" Placement="Mouse" StaysOpen="True" AllowsTransparency="True" PopupAnimation="Fade">
+      <local:PulseFlyout x:Name="PulseMenu" xmlns:local="clr-namespace:CpuTempWidget" />
+    </Popup>
+  </Grid>
+</Window>

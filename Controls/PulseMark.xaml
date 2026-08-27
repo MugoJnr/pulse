@@ -1,0 +1,18 @@
+<UserControl x:Class="CpuTempWidget.Controls.PulseMark"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="Transparent"
+             SnapsToDevicePixels="True">
+  <Viewbox Stretch="Uniform">
+    <Canvas Width="120" Height="40">
+      <Path x:Name="PulsePath"
+            Data="M6,20 H22 L30,6 L40,34 L48,20 H64 L72,10 L80,28 L88,20 H114"
+            Stroke="#1E81C1"
+            StrokeThickness="4.5"
+            StrokeStartLineCap="Round"
+            StrokeEndLineCap="Round"
+            StrokeLineJoin="Round"
+            Fill="Transparent" />
+    </Canvas>
+  </Viewbox>
+</UserControl>

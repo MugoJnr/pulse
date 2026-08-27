@@ -1,0 +1,29 @@
+<Window x:Class="CpuTempWidget.AccountReconnectWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Pulse — Online confirmation required"
+        Width="480" Height="340"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="#0B1220">
+  <Border Padding="28" BorderBrush="#FF3D50" BorderThickness="1">
+    <StackPanel>
+      <TextBlock Text="CRITICAL — reconnect required"
+                 FontSize="20" FontWeight="SemiBold" Foreground="White"
+                 FontFamily="Segoe UI Variable Display, Segoe UI"/>
+      <TextBlock x:Name="DetailText" Margin="0,12,0,10" TextWrapping="Wrap"
+                 Foreground="#FCA5A5" FontSize="13" LineHeight="20"
+                 Text="Must connect to internet — offline grace ended."/>
+      <TextBlock x:Name="HintText" Margin="0,0,0,18" TextWrapping="Wrap" Foreground="#94A3B8" FontSize="12.5"
+                 Text="Pulse will refresh your stored session automatically when a network is available. Sign in only if automatic refresh fails."/>
+      <StackPanel Orientation="Horizontal">
+        <Button Content="Reconnect now" Padding="16,10" Background="#F2A800" Foreground="#0A0F18"
+                BorderThickness="0" FontWeight="Bold" Click="Reconnect_Click"/>
+        <Button Content="Open Portal" Padding="14,10" Margin="10,0,0,0"
+                Background="#1E293B" Foreground="#E2E8F0" BorderThickness="0" Click="Portal_Click"/>
+        <Button Content="Exit" Padding="14,10" Margin="10,0,0,0"
+                Background="Transparent" Foreground="#94A3B8" BorderThickness="0" Click="Exit_Click"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

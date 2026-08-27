@@ -1,0 +1,2 @@
+﻿This folder is the Pulse (CpuTempWidget) source project, moved from Desktop\New Desktop\CpuTempWidget.
+Shortcut Pulse.lnk on the Desktop launches the installed app.
