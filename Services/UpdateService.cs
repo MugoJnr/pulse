@@ -203,36 +203,11 @@ public static class UpdateService
         }
 
         var client = AppHost.Get<IPortalUpdateClient>();
+        var fallback = AppHost.Get<IUpdateFallback>();
+        var result = await UpdateResolver.ResolveAsync(
+            client, fallback, activation, opts.AppVersion, log).ConfigureAwait(true);
 
-        try { await activation.EnsureFreshSessionAsync().ConfigureAwait(true); }
-        catch { /* non-fatal */ }
-
-        var result = await client.CheckAsync(opts.AppVersion).ConfigureAwait(true);
-        if (result.NeedsAuthRefresh)
-        {
-            if (await activation.RefreshSessionAsync().ConfigureAwait(true))
-                result = await client.CheckAsync(opts.AppVersion).ConfigureAwait(true);
-        }
-
-        if (result.NeedsAuthRefresh)
-        {
-            try
-            {
-                var fallback = AppHost.Get<IUpdateFallback>();
-                var gh = await fallback.TryCheckAsync(opts.AppVersion).ConfigureAwait(true);
-                if (gh is not null)
-                {
-                    log.Info("update", "portal unauthorized — using GitHub fallback");
-                    result = gh;
-                }
-            }
-            catch (Exception ex)
-            {
-                log.Warn("update", "GitHub fallback failed: " + ex.Message);
-            }
-        }
-
-        if (result.NeedsAuthRefresh)
+        if (result.NeedsAuthRefresh && !result.UpdateAvailable)
         {
             if (interactive)
             {

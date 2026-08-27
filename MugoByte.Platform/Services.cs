@@ -789,46 +789,8 @@ public sealed class PlatformSyncHost : IPlatformSync, IDisposable
         UpdateCheckResult? update = null;
         try
         {
-            // Same pattern as license cloud refresh: refresh bearer before portal update feed.
-            try { await _activation.EnsureFreshSessionAsync(ct); }
-            catch (Exception ex) { _log.Warn("sync", "session before update: " + ex.Message); }
-
-            update = await _updates.CheckAsync(_options.AppVersion, ct);
-            if (update.NeedsAuthRefresh)
-            {
-                var refreshed = await _activation.RefreshSessionAsync(ct);
-                if (refreshed)
-                {
-                    _log.Info("update", "retrying update check after session refresh");
-                    update = await _updates.CheckAsync(_options.AppVersion, ct);
-                }
-
-                if (update.NeedsAuthRefresh)
-                {
-                    // Soft notice only — never fatal for free-tier users.
-                    _log.Info("update", refreshed
-                        ? "update check still unauthorized after token refresh — portal rejected session (non-fatal)"
-                        : "update check unauthorized — could not refresh session; sign in to check updates (non-fatal)");
-
-                    try
-                    {
-                        var gh = await _updateFallback.TryCheckAsync(_options.AppVersion, ct);
-                        if (gh is not null)
-                        {
-                            _log.Info("update", "portal unauthorized — using GitHub update fallback (non-fatal)");
-                            update = gh;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warn("update", "GitHub update fallback failed: " + ex.Message);
-                    }
-                }
-                else if (refreshed)
-                {
-                    _log.Info("update", "update check ok after session refresh");
-                }
-            }
+            update = await UpdateResolver.ResolveAsync(
+                _updates, _updateFallback, _activation, _options.AppVersion, _log, ct);
 
             LastUpdate = update;
             if (update is { UpdateAvailable: true }

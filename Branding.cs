@@ -12,7 +12,7 @@ public static class Branding
     public const string ShortName = "Pulse";
     public const string Tagline = "Premium always-on-top system monitor";
     public const string Website = "https://mugobyte.com";
-    /// <summary>Default GitHub repo for UpdateCenter (override with MBT_GITHUB_REPO).</summary>
+    /// <summary>Public GitHub repo for fleet auto-updates (override with MBT_GITHUB_REPO).</summary>
     public const string GitHubRepo = "MugoJnr/pulse";
 
     public static string Version =>

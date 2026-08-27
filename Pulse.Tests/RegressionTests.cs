@@ -119,6 +119,52 @@ public class ActivationCryptoTests
     }
 }
 
+public class UpdateResolverTests
+{
+    [Fact]
+    public void Merge_PrefersGitHubWhenPortalUnauthorizedButGitHubHasRelease()
+    {
+        var log = new ListPlatformLog();
+        var portal = new UpdateCheckResult { NeedsAuthRefresh = true, Message = "unauthorized" };
+        var gh = new UpdateCheckResult
+        {
+            UpdateAvailable = true,
+            LatestVersion = "1.13.0",
+            DownloadUrl = "https://github.com/MugoJnr/pulse/releases/download/v1.13.0/Pulse-Setup.exe"
+        };
+        var merged = UpdateResolver.Merge("1.12.0", portal, gh, log);
+        Assert.True(merged.UpdateAvailable);
+        Assert.Equal("1.13.0", merged.LatestVersion);
+    }
+
+    [Fact]
+    public void Merge_PrefersNewerVersionWhenBothHaveUpdates()
+    {
+        var log = new ListPlatformLog();
+        var portal = new UpdateCheckResult
+        {
+            UpdateAvailable = true,
+            LatestVersion = "1.12.5",
+            DownloadUrl = "https://portal.example/pulse-1.12.5.exe"
+        };
+        var gh = new UpdateCheckResult
+        {
+            UpdateAvailable = true,
+            LatestVersion = "1.13.0",
+            DownloadUrl = "https://github.com/example/pulse-1.13.0.exe"
+        };
+        var merged = UpdateResolver.Merge("1.12.0", portal, gh, log);
+        Assert.Equal("1.13.0", merged.LatestVersion);
+    }
+}
+
+internal sealed class ListPlatformLog : IPlatformLog
+{
+    public void Info(string category, string message) { }
+    public void Warn(string category, string message) { }
+    public void Error(string category, string message) { }
+}
+
 public class UpdateServiceTests
 {
     [Fact]
