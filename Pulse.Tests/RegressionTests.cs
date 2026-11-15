@@ -43,12 +43,21 @@ public class SystemMonitorTests
     [Fact]
     public async Task TemperatureSource_NonEmptyAfterSamplerWait()
     {
+        // A machine with a thermal zone publishes a source on the first probe.
+        // A headless runner publishes "unavailable" only after three failed probes (~9s).
         SystemMonitor.EnsureSampler();
-        await Task.Delay(2200);
         using var mon = new SystemMonitor();
         _ = mon.Read();
-        await Task.Delay(500);
-        var src = SystemMonitor.LastTemperatureSource;
+        var deadline = DateTime.UtcNow.AddSeconds(20);
+        string? src = null;
+        while (DateTime.UtcNow < deadline)
+        {
+            src = SystemMonitor.LastTemperatureSource;
+            if (!string.IsNullOrWhiteSpace(src))
+                return;
+            await Task.Delay(250);
+        }
+
         Assert.False(string.IsNullOrWhiteSpace(src));
     }
 }
