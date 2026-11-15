@@ -7,6 +7,8 @@ Production Windows command center: transparent overlay + search-first shell, int
 
 ## Install
 
+Public installer (no source code): [MugoJnr/pulse-releases](https://github.com/MugoJnr/pulse-releases/releases/latest).
+
 ```powershell
 .\build-setup.ps1
 .\setup\Pulse-Setup.exe

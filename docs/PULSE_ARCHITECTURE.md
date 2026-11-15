@@ -67,4 +67,4 @@ Setting: `ConfirmDestructiveActions` (default true). Non-destructive actions sta
 - Full-disk file index
 - External plugin DLLs (registry is in-process for now)
 - GPU / SMART / net Mbps without additional APIs
-- CDN auto-updates until a feed URL is configured
+- Public update feed is GitHub Releases on `MugoJnr/pulse-releases` (fallback `MugoJnr/pulse`), merged with Portal

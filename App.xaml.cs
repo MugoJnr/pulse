@@ -247,7 +247,7 @@ public partial class App : Application
                     var probe = "1.0.0";
                     var candidate = await center.CheckAsync(probe);
                     if (candidate is null)
-                        DiagnosticLog.Write("platform.log", $"update-selftest: CheckAsync returned null (up-to-date or failed) current={current} repo={Branding.GitHubRepo} phase={center.Phase}");
+                        DiagnosticLog.Write("platform.log", $"update-selftest: CheckAsync returned null (up-to-date or failed) current={current} repos={string.Join(",", center.Repos)} phase={center.Phase}");
                     else
                         DiagnosticLog.Write("platform.log", $"update-selftest: OK tag={candidate.Tag} version={candidate.Version} asset={candidate.AssetName} urlHost={(Uri.TryCreate(candidate.AssetUrl, UriKind.Absolute, out var u) ? u.Host : "?")}");
                 }

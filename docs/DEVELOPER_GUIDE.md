@@ -29,6 +29,32 @@ dotnet build -c Release
 .\build-setup.ps1   # → setup\Pulse-Setup.exe (~69 MB self-contained)
 ```
 
+## Publishing a release
+
+Fleet PCs check **MugoJnr/pulse-releases** (public, `Pulse-Setup.exe` only) and fall back to **MugoJnr/pulse**. Both get the same installer until every PC is running a build that knows about `pulse-releases`. After `pulse` is private, unauthenticated PCs can only reach `pulse-releases`.
+
+Installed copies skip a release that is not newer than the version they already run. Do not reuse 1.12.4 for the transition build.
+
+1. Bump `<Version>` in `CpuTempWidget.csproj` to the new `X.Y.Z` and merge to `master`.
+2. One-time: create a fine-grained PAT for **MugoJnr/pulse-releases** only, permission **Contents: Read and write**. Add it as the Actions secret `RELEASES_REPO_TOKEN` on **MugoJnr/pulse**. Do not commit the token. Fine-grained PATs expire — renew the secret before they do.
+3. Tag and push. The tag message is the release notes.
+
+```powershell
+git tag -a vX.Y.Z -m "Release notes shown in the updater."
+git push origin vX.Y.Z
+```
+
+`.github/workflows/release.yml` tests, builds `Pulse-Setup.exe`, publishes it on this repo, and mirrors the exe and notes to `pulse-releases`. The mirror never uploads source. The job fails if `RELEASES_REPO_TOKEN` is missing.
+
+The same script can be run locally after `.\build-setup.ps1` (tokens stay in the environment, not in the command):
+
+```powershell
+$env:RELEASES_REPO_TOKEN = "<pat>"
+.\scripts\publish-release.ps1 -Tag vX.Y.Z -Setup .\setup\Pulse-Setup.exe -Notes "Release notes"
+```
+
+`MBT_GITHUB_TOKEN` / `GH_TOKEN` still authenticate the legacy private-repo check and download. Leave `MBT_GITHUB_REPO` unset on fleet PCs so they use the two-repo feed.
+
 Dev (skip AppData install):
 
 ```powershell

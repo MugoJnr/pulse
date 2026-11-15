@@ -17,12 +17,13 @@ There is **no** production “demo activation” CTA. Local validation uses `--m
 
 ## Contracts (from MBT POS portal)
 
-| Area | Portal |
+| Area | Contract |
 |---|---|
 | Auth | `POST /api/cloud/auth/login`, `register`, `session`, `GET …/me` |
 | License | `POST /api/cloud/licenses/claim`, `activate`, `validate`, `deactivate` |
 | Devices | `GET /api/cloud/devices` |
 | Updates | `GET /api/cloud/updates?product_id=&current_version=` |
+| GitHub fleet feed | `MugoJnr/pulse-releases` releases, then `MugoJnr/pulse` if that feed has no newer installer. No per-machine token. `MBT_GITHUB_TOKEN` / `GH_TOKEN` still authenticate a private source repo. |
 | Base URL | `https://portal.mugobyte.com` (`MBT_PORTAL_URL`) |
 
 Product id for Pulse: **`pulse`**

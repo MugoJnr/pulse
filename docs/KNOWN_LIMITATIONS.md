@@ -8,7 +8,7 @@
 | Temperature / fan | WMI ACPI only | Show `--` / hide fan when unavailable |
 | Full-disk search | Not Everything-class | Depth-3 BFS under Desktop/Docs/Downloads/Pictures |
 | External plugins | In-process modules only | `ModuleRegistry` ready for future DLL loader |
-| Auto-update CDN | Feed URL not configured | Settings shows stub message |
+| Auto-update | Public feed is `MugoJnr/pulse-releases`; `MugoJnr/pulse` is the legacy fallback | Anonymous check every 15 min. A portal `download_url` on `github.com/MugoJnr/pulse/releases/download/...` is retried on `pulse-releases`. |
 | Mica | Win11 DWM; may no-op on older builds | Falls back to painted gradient |
 | WPF Acrylic | Limited vs WinUI | Acrylic-like panel brushes |
 | Dual monitors | Overlay remembers one position | Multi-monitor move supported via drag |

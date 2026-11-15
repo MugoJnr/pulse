@@ -3,10 +3,6 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
 using MugoByte.Platform;
 
 namespace CpuTempWidget.Services;
@@ -34,12 +30,14 @@ public sealed class UpdateCandidate
     public string ReleaseNotes { get; init; } = "";
     public DateTimeOffset PublishedAt { get; init; }
     public bool IsPrerelease { get; init; }
+    /// <summary>owner/name of the GitHub repo this candidate was read from.</summary>
+    public string Repo { get; init; } = "";
 }
 
 public sealed class UpdateCenter : IDisposable
 {
     private readonly IPlatformLog _log;
-    private readonly string _repo;
+    private readonly IReadOnlyList<string> _repos;
     private readonly HttpClient _http;
     private readonly string _updatesDir;
     private readonly object _gate = new();
@@ -51,6 +49,7 @@ public sealed class UpdateCenter : IDisposable
     public UpdatePhase Phase => _phase;
     public UpdateCandidate? Candidate => _candidate;
     public string? DownloadedPath => _downloadedPath;
+    public IReadOnlyList<string> Repos => _repos;
 
     public event Action<UpdatePhase, UpdateCandidate?>? PhaseChanged;
     public event Action<string>? Progress;
@@ -58,8 +57,7 @@ public sealed class UpdateCenter : IDisposable
     public UpdateCenter(IPlatformLog log)
     {
         _log = log;
-        _repo = Environment.GetEnvironmentVariable("MBT_GITHUB_REPO")?.Trim()
-                ?? Branding.GitHubRepo;
+        _repos = GitHubReleaseFeed.ResolveRepos(Environment.GetEnvironmentVariable("MBT_GITHUB_REPO"));
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MugoByte", "Pulse", "updates");
@@ -96,151 +94,29 @@ public sealed class UpdateCenter : IDisposable
         try { Progress?.Invoke(msg); } catch { }
     }
 
-    // ── Version helpers (mirror PortalClients) ───────────────────────────────────
-    private static bool IsNewerVersion(string candidate, string current)
-    {
-        try
-        {
-            var a = NormalizeVersion(candidate);
-            var b = NormalizeVersion(current);
-            return a > b;
-        }
-        catch
-        {
-            return !string.Equals(candidate, current, StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
-    private static Version NormalizeVersion(string raw)
-    {
-        var cleaned = new string(raw.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray()).Trim('.');
-        if (string.IsNullOrWhiteSpace(cleaned)) return new Version(0, 0, 0, 0);
-        if (!cleaned.Contains('.')) cleaned += ".0";
-        return Version.Parse(cleaned);
-    }
-
-    // ── Public API ────────────────────────────────────────────────────────────────
-
-    private static string NormalizeGitHubRepo(string repo)
-    {
-        var cleaned = (repo ?? "").Trim().Trim('/');
-        // Accept full URLs or owner/name; never EscapeDataString the slash (breaks API path).
-        if (cleaned.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
-            cleaned = cleaned["https://github.com/".Length..];
-        if (cleaned.EndsWith(".git", StringComparison.OrdinalIgnoreCase))
-            cleaned = cleaned[..^4];
-        var parts = cleaned.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length >= 2)
-            return $"{parts[0]}/{parts[1]}";
-        return cleaned;
-    }
-
-    private void ApplyGitHubAuth(HttpRequestMessage req)
-    {
-        var token = Environment.GetEnvironmentVariable("MBT_GITHUB_TOKEN")
-                    ?? Environment.GetEnvironmentVariable("GH_TOKEN")
-                    ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-        if (string.IsNullOrWhiteSpace(token)) return;
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Trim());
-    }
-
     public async Task<UpdateCandidate?> CheckAsync(string currentVersion, CancellationToken ct = default)
     {
         SetPhase(UpdatePhase.Checking);
         try
         {
-            var repo = NormalizeGitHubRepo(_repo);
-            var url = $"https://api.github.com/repos/{repo}/releases/latest";
-            using var req = new HttpRequestMessage(HttpMethod.Get, url);
-            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            ApplyGitHubAuth(req);
-
-            using var res = await _http.SendAsync(req, ct);
-            if (!res.IsSuccessStatusCode)
+            Report("checking " + string.Join(", ", _repos));
+            var probes = new List<GitHubReleaseFeed.FeedProbe>(_repos.Count);
+            foreach (var repo in _repos)
             {
-                Report($"GitHub API {res.StatusCode}");
-                SetPhase(UpdatePhase.Failed);
-                return null;
+                ct.ThrowIfCancellationRequested();
+                probes.Add(await ProbeRepoAsync(repo, currentVersion, ct).ConfigureAwait(false));
             }
 
-            var json = await res.Content.ReadAsStringAsync(ct);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            var draft = root.TryGetProperty("draft", out var draftProp) && draftProp.GetBoolean();
-            var prerelease = root.TryGetProperty("prerelease", out var p) && p.GetBoolean();
-            if (draft || prerelease)
-            {
-                SetPhase(UpdatePhase.UpToDate);
-                return null;
-            }
-
-            var tag = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "" : "";
-            var version = tag.TrimStart('v', 'V');
-            if (string.IsNullOrWhiteSpace(version) || !IsNewerVersion(version, currentVersion))
-            {
-                SetPhase(UpdatePhase.UpToDate);
-                return null;
-            }
-
-            // Pick the installer asset (self-contained .exe)
-            string assetUrl = "", assetName = "";
-            long assetSize = 0;
-            string digest = "";
-
-            if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var a in assets.EnumerateArray())
-                {
-                    var name = a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
-                    if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
-                    var urlProp = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() ?? "" : "";
-                    var sz = a.TryGetProperty("size", out var s) ? s.GetInt64() : 0;
-                    var digestProp = a.TryGetProperty("digest", out var di) ? di.GetString() ?? "" : "";
-                    if (string.IsNullOrWhiteSpace(urlProp)) continue;
-                    assetUrl = urlProp;
-                    assetName = name;
-                    assetSize = sz;
-                    digest = digestProp; // "sha256:ABC..."
-                    break; // first .exe
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(assetUrl))
-            {
-                Report("no installer asset found");
-                SetPhase(UpdatePhase.Failed);
-                return null;
-            }
-
-            string sha256 = digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
-                ? digest[7..] : digest;
-
-            var notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
-            var published = root.TryGetProperty("published_at", out var pa) && DateTimeOffset.TryParse(pa.GetString(), out var dt)
-                ? dt : DateTimeOffset.UtcNow;
-
-            var candidate = new UpdateCandidate
-            {
-                Version = version,
-                Tag = tag,
-                AssetUrl = assetUrl,
-                AssetName = assetName,
-                SizeBytes = assetSize,
-                Sha256 = sha256,
-                ReleaseNotes = notes,
-                PublishedAt = published,
-                IsPrerelease = prerelease
-            };
-
+            var decision = GitHubReleaseFeed.Decide(probes);
             lock (_gate)
             {
-                _candidate = candidate;
+                _candidate = decision.Candidate;
             }
 
-            SetPhase(UpdatePhase.Available);
-            Report($"update available: {version}");
-            return candidate;
+            SetPhase(decision.Phase);
+            if (!string.IsNullOrWhiteSpace(decision.Detail))
+                Report(decision.Detail);
+            return decision.Candidate;
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
@@ -249,6 +125,56 @@ public sealed class UpdateCenter : IDisposable
             SetPhase(UpdatePhase.Failed);
             return null;
         }
+    }
+
+    private async Task<GitHubReleaseFeed.FeedProbe> ProbeRepoAsync(string repo, string currentVersion, CancellationToken ct)
+    {
+        var url = $"https://api.github.com/repos/{repo}/releases/latest";
+        try
+        {
+            using var res = await GitHubReleaseFeed.GetAsync(
+                _http,
+                url,
+                GitHubReleaseFeed.ReadToken(),
+                HttpCompletionOption.ResponseContentRead,
+                ct).ConfigureAwait(false);
+            if (!res.IsSuccessStatusCode)
+            {
+                Report($"GitHub API {repo} {(int)res.StatusCode}");
+                return new GitHubReleaseFeed.FeedProbe(repo, GitHubReleaseFeed.FeedProbeKind.Miss, null);
+            }
+
+            var json = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var kind = GitHubReleaseFeed.ParseLatest(json, currentVersion, repo, out var candidate);
+            return new GitHubReleaseFeed.FeedProbe(repo, kind, candidate);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            Report($"GitHub API {repo} failed: {ex.Message}");
+            return new GitHubReleaseFeed.FeedProbe(repo, GitHubReleaseFeed.FeedProbeKind.Miss, null);
+        }
+    }
+
+    private async Task<HttpResponseMessage?> DownloadReleaseAsync(string assetUrl, CancellationToken ct)
+    {
+        HttpResponseMessage? last = null;
+        foreach (var target in GitHubReleaseFeed.DownloadUrlAttempts(assetUrl))
+        {
+            last?.Dispose();
+            last = await GitHubReleaseFeed.GetAsync(
+                _http,
+                target,
+                GitHubReleaseFeed.ReadToken(),
+                HttpCompletionOption.ResponseHeadersRead,
+                ct).ConfigureAwait(false);
+            if (last.IsSuccessStatusCode)
+                return last;
+            Report($"download failed: {(int)last.StatusCode} {target}");
+        }
+
+        last?.Dispose();
+        return null;
     }
 
     public async Task<bool> DownloadAsync(IProgress<(long received, long total)>? progress = null, CancellationToken ct = default)
@@ -279,12 +205,9 @@ public sealed class UpdateCenter : IDisposable
 
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, candidate.AssetUrl);
-            ApplyGitHubAuth(req);
-            using var res = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-            if (!res.IsSuccessStatusCode)
+            using var res = await DownloadReleaseAsync(candidate.AssetUrl, ct).ConfigureAwait(false);
+            if (res is null)
             {
-                Report($"download failed: {res.StatusCode}");
                 SetPhase(UpdatePhase.Failed);
                 return false;
             }
@@ -458,23 +381,4 @@ public sealed class UpdateCenter : IDisposable
         while (d >= 1024 && i < suf.Length - 1) { d /= 1024; i++; }
         return $"{d:0.#} {suf[i]}";
     }
-}
-
-// Lightweight GitHub Release DTO for CheckAsync
-internal sealed class GitHubRelease
-{
-    [JsonPropertyName("tag_name")] public string TagName { get; set; } = "";
-    [JsonPropertyName("prerelease")] public bool Prerelease { get; set; }
-    [JsonPropertyName("draft")] public bool Draft { get; set; }
-    [JsonPropertyName("assets")] public GitHubAsset[] Assets { get; set; } = Array.Empty<GitHubAsset>();
-    [JsonPropertyName("body")] public string Body { get; set; } = "";
-    [JsonPropertyName("published_at")] public string PublishedAt { get; set; } = "";
-}
-
-internal sealed class GitHubAsset
-{
-    [JsonPropertyName("name")] public string Name { get; set; } = "";
-    [JsonPropertyName("browser_download_url")] public string BrowserDownloadUrl { get; set; } = "";
-    [JsonPropertyName("size")] public long Size { get; set; }
-    [JsonPropertyName("digest")] public string Digest { get; set; } = "";
 }

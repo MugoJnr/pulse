@@ -173,7 +173,7 @@ DI: `services.AddMugoBytePlatform(PlatformOptions.ForPulse(version))`
 - MVVM is foundational; much of the shell is still code-behind  
 - Self-contained single-file memory is higher than the 30–60 MB aspirational target  
 - Feature entitlement flags exist on claims; UI gating by `HasFeature` is not fully wired everywhere  
-- Update feed works when portal publishes Pulse updates with checksum  
+- Update feed: Portal `/api/cloud/updates` merged with public GitHub Releases on `MugoJnr/pulse-releases` (fallback `MugoJnr/pulse`). No per-machine token. Checksum when the feed provides one.  
 
 See `docs/KNOWN_LIMITATIONS.md`.
 

@@ -313,19 +313,7 @@ public static class UpdateService
             }
             else
             {
-                using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-                // GitHub private assets may need a token.
-                var token = Environment.GetEnvironmentVariable("MBT_GITHUB_TOKEN")
-                            ?? Environment.GetEnvironmentVariable("GH_TOKEN")
-                            ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-                if (!string.IsNullOrWhiteSpace(token)
-                    && url.Contains("github.com", StringComparison.OrdinalIgnoreCase))
-                {
-                    http.DefaultRequestHeaders.Authorization =
-                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token.Trim());
-                    http.DefaultRequestHeaders.UserAgent.ParseAdd("MugoByte-Pulse-Updater");
-                }
-                bytes = await http.GetByteArrayAsync(url);
+                bytes = await DownloadBytesAsync(url).ConfigureAwait(false);
             }
 
             if (!VerifyChecksum(bytes, update.ChecksumSha256))
@@ -374,5 +362,40 @@ public static class UpdateService
                 TrayService.ShowBalloon("Pulse update failed", ex.Message);
             }
         }
+    }
+
+    /// <summary>
+    /// GitHub URLs are fetched anonymously first. MBT_GITHUB_TOKEN / GH_TOKEN / GITHUB_TOKEN
+    /// is sent only if that fails with 401, 403, 404, or 429, and only to a GitHub host.
+    /// A legacy MugoJnr/pulse download URL is retried on MugoJnr/pulse-releases.
+    /// </summary>
+    private static async Task<byte[]> DownloadBytesAsync(string url)
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("MugoByte-Pulse-Updater");
+        var token = GitHubReleaseFeed.ReadToken();
+        var failures = new List<string>();
+        foreach (var target in GitHubReleaseFeed.DownloadUrlAttempts(url))
+        {
+            if (!GitHubReleaseFeed.IsGitHubUrl(target))
+                return await http.GetByteArrayAsync(target).ConfigureAwait(false);
+
+            using var res = await GitHubReleaseFeed.GetAsync(
+                http,
+                target,
+                token,
+                HttpCompletionOption.ResponseContentRead,
+                CancellationToken.None).ConfigureAwait(false);
+            if (!res.IsSuccessStatusCode)
+            {
+                failures.Add($"{(int)res.StatusCode} {target}");
+                continue;
+            }
+
+            return await res.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+        }
+
+        throw new InvalidOperationException(
+            "Update download failed: " + (failures.Count == 0 ? url : string.Join("; ", failures)));
     }
 }
