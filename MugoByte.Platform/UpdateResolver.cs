@@ -1,8 +1,8 @@
 namespace MugoByte.Platform;
 
 /// <summary>
-/// Fleet update resolution: Portal when available, always merge with public GitHub Releases.
-/// Every Pulse PC should receive updates without per-machine tokens when GitHub releases are public.
+/// Fleet update resolution: Portal when available, always merge with public GitHub Releases
+/// on MugoJnr/pulse-releases (fallback MugoJnr/pulse). No per-machine token is required.
 /// </summary>
 public static class UpdateResolver
 {

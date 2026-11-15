@@ -12,8 +12,20 @@ public static class Branding
     public const string ShortName = "Pulse";
     public const string Tagline = "Premium always-on-top system monitor";
     public const string Website = "https://mugobyte.com";
-    /// <summary>Public GitHub repo for fleet auto-updates (override with MBT_GITHUB_REPO).</summary>
-    public const string GitHubRepo = "MugoJnr/pulse";
+    /// <summary>
+    /// Public installer feed (no source). Checked first so fleet PCs keep updating
+    /// after the source repo is private. Override the whole feed with MBT_GITHUB_REPO.
+    /// </summary>
+    public const string GitHubReleasesRepo = "MugoJnr/pulse-releases";
+
+    /// <summary>
+    /// Source repository. Legacy update feed, checked after <see cref="GitHubReleasesRepo"/>.
+    /// MBT_GITHUB_TOKEN / GH_TOKEN still authenticate this repo when it is private.
+    /// </summary>
+    public const string GitHubSourceRepo = "MugoJnr/pulse";
+
+    /// <summary>Primary public update feed. Same as <see cref="GitHubReleasesRepo"/>.</summary>
+    public const string GitHubRepo = GitHubReleasesRepo;
 
     public static string Version =>
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
